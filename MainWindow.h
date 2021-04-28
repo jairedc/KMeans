@@ -2,6 +2,9 @@
 #define MAINWINDOW_H
 
 #include <QMainWindow>
+#include <QVector>
+#include <RandomData.h>
+#include <kmeans.h>
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class MainWindow; }
@@ -14,6 +17,15 @@ class MainWindow : public QMainWindow
 public:
   MainWindow(QWidget *parent = nullptr);
   ~MainWindow();
+
+  void SetSignals();
+  void GenerateData();
+
+  QVector<double> xData;
+  QVector<double> yData;
+
+public slots:
+
 
 private:
   Ui::MainWindow *ui;
