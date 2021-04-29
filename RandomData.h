@@ -1,17 +1,17 @@
 #ifndef RANDOMDATA_H
 #define RANDOMDATA_H
 
-#include <QRandomGenerator>
+#include <random>
 #include <QVector>
+
+typedef std::uniform_real_distribution<double> uDistd;
 
 class RandomData
 {
-private:
-  qint32 numberOfData_;
-  qint32 low_, high_;
 public:
-  RandomData(qint32 numberOfData, qint32 low, qint32 high);
-  QVector<double> Generate();
+  static QVector<double> Generate(uDistd& dist, std::mt19937_64& gen,
+                                  qint32 total);
+  static double Next(uDistd& dist, std::mt19937_64& gen);
 };
 
 #endif // RANDOMDATA_H

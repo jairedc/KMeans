@@ -5,7 +5,6 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent),
                                           ui(new Ui::MainWindow)
 {
   ui->setupUi(this);
-  ui->xMinSpinBox->selectAll();
 
   ui->plot->xAxis->setRange(-10.0, 10.0);
   ui->plot->yAxis->setRange(-10.0, 10.0);
@@ -17,6 +16,13 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent),
   SetSignals();
 }
 
+void MainWindow::showEvent(QShowEvent *event)
+{
+  QWidget::showEvent(event);
+  ui->xMinSpinBox->selectAll();
+  ui->xMinSpinBox->setFocus();
+}
+
 void MainWindow::SetSignals()
 {
   connect(ui->createDataButton, &QPushButton::clicked,
@@ -25,13 +31,13 @@ void MainWindow::SetSignals()
 
 void MainWindow::GenerateData()
 {
-  RandomData xRandomGenerator(ui->nDataSpinBox->value(),
-               (double)ui->xMinSpinBox->value(), (double)ui->xMaxSpinBox->value());
-  RandomData yRandomGenerator(ui->nDataSpinBox->value(),
-               (double)ui->yMinSpinBox->value(), (double)ui->yMaxSpinBox->value());
+  std::random_device rd;
+  std::mt19937_64 gen(rd());
+  uDistd xDist(ui->xMinSpinBox->value(), ui->xMaxSpinBox->value());
+  uDistd yDist(ui->yMinSpinBox->value(), ui->yMaxSpinBox->value());
 
-  xData = xRandomGenerator.Generate();
-  yData = yRandomGenerator.Generate();
+  xData = RandomData::Generate(xDist, gen, ui->nDataSpinBox->value());
+  yData = RandomData::Generate(yDist, gen, ui->nDataSpinBox->value());
 
   if (ui->plot->graphCount() == 0)
     ui->plot->addGraph();
@@ -45,5 +51,6 @@ void MainWindow::GenerateData()
 MainWindow::~MainWindow()
 {
   delete ui;
+  delete rndG;
 }
 
