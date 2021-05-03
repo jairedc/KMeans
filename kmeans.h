@@ -14,13 +14,23 @@ public:
   kmeans(int k, QVector<T> data, quint32 maxIterations = 1000);
 
   void setData(QVector<T> data);
+  void setK(int k);
 
-  void operator()(std::function<double(T, T)> d);
+  void step(std::function<double(T, T)> d);
+  void step(std::function<double(T, T)> d, int steps);
+  void finish(std::function<double(T, T)> d);
+  void reset();
+
+  int k() const;
+  QVector<T>& centroids();
+  QVector<quint32>& assignments();
 
   ~kmeans();
 
 private:
+  bool initialized_;
   int maxIterations_;
+  int currIteration_;
   int k_;
   QVector<T> data_;
   QVector<T> centroids_;
