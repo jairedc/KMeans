@@ -62,6 +62,11 @@ struct Pair2D
   {
     return qSqrt(qPow(lhs[0] - rhs[0], 2) + qPow(lhs[1] - rhs[1], 2));
   }
+
+  static double L1Distance(Pair2D lhs, Pair2D rhs)
+  {
+    return qAbs(lhs[0] - rhs[0]) + qAbs(lhs[1] - rhs[1]);
+  }
 };
 
 class MainWindow : public QMainWindow

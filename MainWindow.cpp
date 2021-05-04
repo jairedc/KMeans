@@ -29,6 +29,8 @@ void MainWindow::showEvent(QShowEvent *event)
   QPen originPen(Qt::gray, 1);
   ui->plot->xAxis->grid()->setZeroLinePen(originPen);
   ui->plot->yAxis->grid()->setZeroLinePen(originPen);
+
+  ui->stopButton->setEnabled(false);
 }
 
 void MainWindow::SetSignals()
@@ -51,6 +53,9 @@ void MainWindow::SetSignals()
 
 void MainWindow::PlaySteps()
 {
+  ui->stepButton->setEnabled(false);
+  ui->playButton->setEnabled(false);
+  ui->stopButton->setEnabled(true);
   timer_->start(ui->playSpeedSpinBox->value());
 }
 
@@ -63,6 +68,9 @@ void MainWindow::ChangePlayTimeout(int timeout)
 void MainWindow::StopPlaying()
 {
   timer_->stop();
+  ui->playButton->setEnabled(true);
+  ui->stepButton->setEnabled(true);
+  ui->stopButton->setEnabled(false);
 }
 
 void MainWindow::EnableControls(bool state)
@@ -74,6 +82,7 @@ void MainWindow::EnableControls(bool state)
   ui->yMaxSpinBox->setEnabled(state);
   ui->createDataButton->setEnabled(state);
   ui->kSpinBox->setEnabled(state);
+  ui->distanceFComboBox->setEnabled(state);
 }
 
 void MainWindow::ImportData()
@@ -193,12 +202,17 @@ void MainWindow::Step()
       SetColorVector(k);
       EnableControls(false);
     }
+    std::function<double(Pair2D, Pair2D)> distF;
+    if (ui->distanceFComboBox->currentText() == "L1")
+      distF = Pair2D::L1Distance;
+    else
+      distF = Pair2D::EuclideanDistance;
 
     int stepValue = ui->stepSpinBox->value();
     if (stepValue == 1)
-      kmeans_alg_->step(Pair2D::EuclideanDistance);
+      kmeans_alg_->step(distF);
     else
-      kmeans_alg_->step(Pair2D::EuclideanDistance, stepValue);
+      kmeans_alg_->step(distF, stepValue);
     Set2DGraphData();
   }
 }
@@ -209,6 +223,7 @@ void MainWindow::Reset()
   DefaultPlot();
   kmeansExecuting = false;
   EnableControls(true);
+  ui->stopButton->setEnabled(false);
 }
 
 void MainWindow::SetPairVector(QVector<double> x, QVector<double> y)
