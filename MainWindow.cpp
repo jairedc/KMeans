@@ -83,6 +83,7 @@ void MainWindow::EnableControls(bool state)
   ui->createDataButton->setEnabled(state);
   ui->kSpinBox->setEnabled(state);
   ui->distanceFComboBox->setEnabled(state);
+  ui->initComboBox->setEnabled(state);
 }
 
 void MainWindow::ImportData()
