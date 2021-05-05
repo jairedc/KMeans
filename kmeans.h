@@ -45,10 +45,10 @@ private:
 
   QRandomGenerator* rand_;
 
-  void initialize();
+  void initialize(std::function<double(T, T)> d);
   void initializeRandom();
   void initializeSample();
-  void initializeKpp();
+  void initializeKpp(std::function<double(T, T)> d);
 };
 
 #include "kmeans.cpp"

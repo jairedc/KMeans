@@ -72,7 +72,7 @@ void kmeans<T>::step(std::function<double(T, T)> d)
   if (!initialized_)
   {
     initialized_ = true;
-    initialize();
+    initialize(d);
   }
   if (currIteration_ >= maxIterations_)
     return;
@@ -153,13 +153,13 @@ kmeans<T>::~kmeans()
 }
 
 template<class T>
-void kmeans<T>::initialize()
+void kmeans<T>::initialize(std::function<double(T, T)> d)
 {
   switch (initType_)
   {
-//    case kmeans::Random: initializeRandom(); break;
+    case InitializeType::Random: initializeSample(); break;
     case InitializeType::Sample: initializeSample(); break;
-    case InitializeType::Kpp:    initializeKpp();    break;
+    case InitializeType::Kpp:    initializeKpp(d);   break;
   }
 }
 
@@ -181,9 +181,79 @@ void kmeans<T>::initializeSample()
 }
 
 template<class T>
-void kmeans<T>::initializeKpp()
+void kmeans<T>::initializeKpp(std::function<double(T, T)> d)
 {
+  QVector<double> distances(data_.size()), cdf(data_.size());
+  double currentDistance, minDistance, totalDistance;
+  double pick;
 
+  // Initialize first centroid at random
+  centroids_[0] = data_[rand_->bounded(data_.size())];
+
+  for (int c = 1; c < centroids_.size(); c++)
+  {
+    totalDistance = 0.0;
+
+    // Find minimum distance between a point and all centroids
+    for (int i = 0; i < data_.size(); i++)
+    {
+      minDistance = std::numeric_limits<double>::max();
+      for (int j = 0; j < c; j++)
+      {
+        currentDistance = d(data_[i], centroids_[j]);
+        if (currentDistance < minDistance)
+          minDistance = currentDistance;
+      }
+      distances[i] = minDistance;
+      totalDistance += minDistance;
+    }
+    // Transform distances to a PDF
+    std::transform(distances.begin(), distances.end(), distances.begin(),
+                  [&totalDistance](double& dist){return dist / totalDistance;});
+
+    // Create CDF from PDF
+    cdf[0] = distances[0];
+    for (int i = 1; i < cdf.size(); i++)
+      cdf[i] = cdf[i - 1] + distances[i];
+
+    // Pick point weighted on largest distance
+    pick = rand();
+    for (int i = 0; i < cdf.size(); i++)
+    {
+      if (pick < cdf[i])
+      {
+        centroids_[c] = data_[i];
+        break;
+      }
+    }
+  }
 }
 
 #endif
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
