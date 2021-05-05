@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>920</width>
-    <height>836</height>
+    <height>895</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -57,43 +57,7 @@
          <property name="verticalSpacing">
           <number>6</number>
          </property>
-         <item row="0" column="2">
-          <widget class="QSpinBox" name="xMaxSpinBox">
-           <property name="minimum">
-            <number>-100000</number>
-           </property>
-           <property name="maximum">
-            <number>100000</number>
-           </property>
-           <property name="value">
-            <number>10</number>
-           </property>
-          </widget>
-         </item>
-         <item row="0" column="0">
-          <widget class="QLabel" name="label_2">
-           <property name="text">
-            <string>X (min, max)</string>
-           </property>
-           <property name="alignment">
-            <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-           </property>
-          </widget>
-         </item>
-         <item row="0" column="1">
-          <widget class="QSpinBox" name="xMinSpinBox">
-           <property name="minimum">
-            <number>-100000</number>
-           </property>
-           <property name="maximum">
-            <number>100000</number>
-           </property>
-           <property name="value">
-            <number>-10</number>
-           </property>
-          </widget>
-         </item>
-         <item row="1" column="2">
+         <item row="5" column="2">
           <widget class="QSpinBox" name="yMaxSpinBox">
            <property name="minimum">
             <number>-100000</number>
@@ -106,24 +70,8 @@
            </property>
           </widget>
          </item>
-         <item row="2" column="0">
-          <widget class="QLabel" name="nDataLabel">
-           <property name="sizePolicy">
-            <sizepolicy hsizetype="Fixed" vsizetype="Preferred">
-             <horstretch>0</horstretch>
-             <verstretch>0</verstretch>
-            </sizepolicy>
-           </property>
-           <property name="text">
-            <string>Number of Data:</string>
-           </property>
-           <property name="alignment">
-            <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-           </property>
-          </widget>
-         </item>
-         <item row="1" column="0">
-          <widget class="QLabel" name="label">
+         <item row="5" column="0">
+          <widget class="QLabel" name="yBoundsLabel">
            <property name="text">
             <string>Y (min, max)</string>
            </property>
@@ -132,7 +80,7 @@
            </property>
           </widget>
          </item>
-         <item row="1" column="1">
+         <item row="5" column="1">
           <widget class="QSpinBox" name="yMinSpinBox">
            <property name="minimum">
             <number>-100000</number>
@@ -145,7 +93,20 @@
            </property>
           </widget>
          </item>
-         <item row="2" column="1">
+         <item row="4" column="1">
+          <widget class="QSpinBox" name="xMinSpinBox">
+           <property name="minimum">
+            <number>-100000</number>
+           </property>
+           <property name="maximum">
+            <number>100000</number>
+           </property>
+           <property name="value">
+            <number>-10</number>
+           </property>
+          </widget>
+         </item>
+         <item row="6" column="1">
           <widget class="QSpinBox" name="nDataSpinBox">
            <property name="sizePolicy">
             <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
@@ -164,7 +125,129 @@
            </property>
           </widget>
          </item>
-         <item row="2" column="2">
+         <item row="4" column="0">
+          <widget class="QLabel" name="xBoundsLabel">
+           <property name="text">
+            <string>X (min, max)</string>
+           </property>
+           <property name="alignment">
+            <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+           </property>
+          </widget>
+         </item>
+         <item row="6" column="0">
+          <widget class="QLabel" name="nDataLabel">
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="Fixed" vsizetype="Preferred">
+             <horstretch>0</horstretch>
+             <verstretch>0</verstretch>
+            </sizepolicy>
+           </property>
+           <property name="text">
+            <string>Number of Data:</string>
+           </property>
+           <property name="alignment">
+            <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+           </property>
+          </widget>
+         </item>
+         <item row="2" column="1" colspan="2">
+          <widget class="QComboBox" name="pointShapeComboBox">
+           <item>
+            <property name="text">
+             <string>Disc</string>
+            </property>
+           </item>
+           <item>
+            <property name="text">
+             <string>Circle</string>
+            </property>
+           </item>
+           <item>
+            <property name="text">
+             <string>Square</string>
+            </property>
+           </item>
+           <item>
+            <property name="text">
+             <string>Diamond</string>
+            </property>
+           </item>
+           <item>
+            <property name="text">
+             <string>Cross</string>
+            </property>
+           </item>
+           <item>
+            <property name="text">
+             <string>Plus</string>
+            </property>
+           </item>
+           <item>
+            <property name="text">
+             <string>Star</string>
+            </property>
+           </item>
+           <item>
+            <property name="text">
+             <string>Triangle</string>
+            </property>
+           </item>
+           <item>
+            <property name="text">
+             <string>Inverted Triangle</string>
+            </property>
+           </item>
+           <item>
+            <property name="text">
+             <string>Cross Square</string>
+            </property>
+           </item>
+           <item>
+            <property name="text">
+             <string>Plus Square</string>
+            </property>
+           </item>
+           <item>
+            <property name="text">
+             <string>Cross Circle</string>
+            </property>
+           </item>
+           <item>
+            <property name="text">
+             <string>Plus Circle</string>
+            </property>
+           </item>
+           <item>
+            <property name="text">
+             <string>Peace</string>
+            </property>
+           </item>
+          </widget>
+         </item>
+         <item row="2" column="0">
+          <widget class="QLabel" name="pointShapeLabel">
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+             <horstretch>0</horstretch>
+             <verstretch>0</verstretch>
+            </sizepolicy>
+           </property>
+           <property name="minimumSize">
+            <size>
+             <width>0</width>
+             <height>25</height>
+            </size>
+           </property>
+           <property name="text">
+            <string>Point Shape:</string>
+           </property>
+           <property name="alignment">
+            <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+           </property>
+          </widget>
+         </item>
+         <item row="6" column="2">
           <widget class="QPushButton" name="createDataButton">
            <property name="sizePolicy">
             <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
@@ -174,6 +257,51 @@
            </property>
            <property name="text">
             <string>&amp;Create Data</string>
+           </property>
+          </widget>
+         </item>
+         <item row="4" column="2">
+          <widget class="QSpinBox" name="xMaxSpinBox">
+           <property name="minimum">
+            <number>-100000</number>
+           </property>
+           <property name="maximum">
+            <number>100000</number>
+           </property>
+           <property name="value">
+            <number>10</number>
+           </property>
+          </widget>
+         </item>
+         <item row="1" column="0">
+          <widget class="QLabel" name="pointSizeLabel">
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+             <horstretch>0</horstretch>
+             <verstretch>0</verstretch>
+            </sizepolicy>
+           </property>
+           <property name="minimumSize">
+            <size>
+             <width>0</width>
+             <height>25</height>
+            </size>
+           </property>
+           <property name="text">
+            <string>Point Size:</string>
+           </property>
+           <property name="alignment">
+            <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+           </property>
+          </widget>
+         </item>
+         <item row="1" column="1">
+          <widget class="QSpinBox" name="pointSizeSpinBox">
+           <property name="maximum">
+            <number>200</number>
+           </property>
+           <property name="value">
+            <number>4</number>
            </property>
           </widget>
          </item>
@@ -398,6 +526,109 @@
              <string>Random</string>
             </property>
            </item>
+          </widget>
+         </item>
+         <item row="3" column="2">
+          <widget class="QLabel" name="label_5">
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+             <horstretch>0</horstretch>
+             <verstretch>0</verstretch>
+            </sizepolicy>
+           </property>
+           <property name="minimumSize">
+            <size>
+             <width>0</width>
+             <height>25</height>
+            </size>
+           </property>
+           <property name="text">
+            <string>Centroid Shape:</string>
+           </property>
+           <property name="alignment">
+            <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+           </property>
+          </widget>
+         </item>
+         <item row="3" column="3">
+          <widget class="QComboBox" name="centroidShapeComboBox">
+           <item>
+            <property name="text">
+             <string>Disc</string>
+            </property>
+           </item>
+           <item>
+            <property name="text">
+             <string>Circle</string>
+            </property>
+           </item>
+           <item>
+            <property name="text">
+             <string>Square</string>
+            </property>
+           </item>
+           <item>
+            <property name="text">
+             <string>Diamond</string>
+            </property>
+           </item>
+           <item>
+            <property name="text">
+             <string>Cross</string>
+            </property>
+           </item>
+           <item>
+            <property name="text">
+             <string>Plus</string>
+            </property>
+           </item>
+           <item>
+            <property name="text">
+             <string>Star</string>
+            </property>
+           </item>
+           <item>
+            <property name="text">
+             <string>Triangle</string>
+            </property>
+           </item>
+           <item>
+            <property name="text">
+             <string>Inverted Triangle</string>
+            </property>
+           </item>
+           <item>
+            <property name="text">
+             <string>Cross Square</string>
+            </property>
+           </item>
+           <item>
+            <property name="text">
+             <string>Plus Square</string>
+            </property>
+           </item>
+           <item>
+            <property name="text">
+             <string>Cross Circle</string>
+            </property>
+           </item>
+           <item>
+            <property name="text">
+             <string>Plus Circle</string>
+            </property>
+           </item>
+           <item>
+            <property name="text">
+             <string>Peace</string>
+            </property>
+           </item>
+          </widget>
+         </item>
+         <item row="5" column="3">
+          <widget class="QPushButton" name="backOneButton">
+           <property name="text">
+            <string>&amp;Back One Step</string>
+           </property>
           </widget>
          </item>
         </layout>

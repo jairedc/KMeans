@@ -15,6 +15,13 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent),
 
   kmeansExecuting_ = false;
   playing_ = false;
+  step_ = 0;
+
+  pointStyle_.setShape(QCPScatterStyle::ssDisc);
+  pointStyle_.setSize(4);
+  centroidStyle_.setShape(QCPScatterStyle::ssCrossCircle);
+  centroidStyle_.setSize(20);
+
   SetSignals();
 }
 
@@ -29,8 +36,14 @@ void MainWindow::showEvent(QShowEvent *event)
   QPen originPen(Qt::gray, 1);
   ui->plot->xAxis->grid()->setZeroLinePen(originPen);
   ui->plot->yAxis->grid()->setZeroLinePen(originPen);
+  ui->plot->setInteraction(QCP::iRangeDrag, true);
+  ui->plot->setInteraction(QCP::iRangeZoom, true);
+
+  // Cross circle
+  ui->centroidShapeComboBox->setCurrentIndex(11);
 
   ui->stopButton->setEnabled(false);
+  ui->backOneButton->setEnabled(false);
 }
 
 void MainWindow::SetSignals()
@@ -47,8 +60,16 @@ void MainWindow::SetSignals()
           this, &MainWindow::StopPlaying);
   connect(ui->playSpeedSpinBox, QOverload<int>::of(&QSpinBox::valueChanged),
           this, &MainWindow::ChangePlayTimeout);
+  connect(ui->pointSizeSpinBox, QOverload<int>::of(&QSpinBox::valueChanged),
+          this, &MainWindow::PointSizeChanged);
   connect(ui->importAction, &QAction::triggered,
           this, &MainWindow::ImportData);
+  connect(ui->pointShapeComboBox, &QComboBox::currentTextChanged,
+          this, &MainWindow::PointShapeChanged);
+  connect(ui->centroidShapeComboBox, &QComboBox::currentTextChanged,
+          this, &MainWindow::CentroidShapeChanged);
+  connect(ui->backOneButton, &QPushButton::clicked,
+          this, &MainWindow::GoBackwardOneStep);
 }
 
 void MainWindow::PlaySteps()
@@ -56,6 +77,7 @@ void MainWindow::PlaySteps()
   ui->stepButton->setEnabled(false);
   ui->playButton->setEnabled(false);
   ui->stopButton->setEnabled(true);
+  ui->backOneButton->setEnabled(false);
   timer_->start(ui->playSpeedSpinBox->value());
   playing_ = true;
 }
@@ -74,6 +96,7 @@ void MainWindow::StopPlaying()
   ui->playButton->setEnabled(true);
   ui->stepButton->setEnabled(true);
   ui->stopButton->setEnabled(false);
+  ui->backOneButton->setEnabled(true);
 }
 
 void MainWindow::EnableControls(bool state)
@@ -158,7 +181,7 @@ void MainWindow::DefaultPlot()
   QCPGraph* g = ui->plot->graph(0);
   g->setData(xData_, yData_);
   g->setLineStyle(QCPGraph::lsNone);
-  g->setScatterStyle(QCPScatterStyle(QCPScatterStyle::ssCircle, 4));
+  g->setScatterStyle(pointStyle_);
   ui->plot->replot();
 }
 
@@ -219,12 +242,38 @@ void MainWindow::Step()
     else
       distF = Pair2D::EuclideanDistance;
 
+    if (step_)
+    {
+      CopyLastStep();
+      if (!playing_)
+        ui->backOneButton->setEnabled(true);
+    }
+
     int stepValue = ui->stepSpinBox->value();
     if (stepValue == 1)
       kmeans_alg_->step(distF);
     else
       kmeans_alg_->step(distF, stepValue);
+    step_++;
     Set2DGraphData();
+  }
+}
+
+void MainWindow::GoBackwardOneStep()
+{
+  ui->backOneButton->setEnabled(false);
+  PairBuckets assignedPairs = GetPairBuckets(assignmentsBackward_);
+
+  DrawData(centroidsBackward_, assignedPairs);
+  kmeans_alg_->centroids() = centroidsBackward_;
+}
+
+void MainWindow::CopyLastStep()
+{
+  if (step_)
+  {
+    centroidsBackward_ = kmeans_alg_->centroids();
+    assignmentsBackward_ = kmeans_alg_->assignments();
   }
 }
 
@@ -236,6 +285,45 @@ void MainWindow::Reset()
   playing_ = false;
   EnableControls(true);
   ui->stopButton->setEnabled(false);
+  ui->backOneButton->setEnabled(false);
+  step_ = 0;
+}
+
+void MainWindow::PointSizeChanged(int size)
+{
+  pointStyle_.setSize(size);
+  centroidStyle_.setSize(size + 16);
+  if (!playing_)
+  {
+    if(kmeansExecuting_)
+      Set2DGraphData();
+    else
+      DefaultPlot();
+  }
+}
+
+void MainWindow::PointShapeChanged(QString text)
+{
+  pointStyle_.setShape(GetStyleFromString(text));
+  if (!playing_)
+  {
+    if(kmeansExecuting_)
+      Set2DGraphData();
+    else
+      DefaultPlot();
+  }
+}
+
+void MainWindow::CentroidShapeChanged(QString text)
+{
+  centroidStyle_.setShape(GetStyleFromString(text));
+  if (!playing_)
+  {
+    if(kmeansExecuting_)
+      Set2DGraphData();
+    else
+      DefaultPlot();
+  }
 }
 
 void MainWindow::SetPairVector(QVector<double> x, QVector<double> y)
@@ -247,12 +335,17 @@ void MainWindow::SetPairVector(QVector<double> x, QVector<double> y)
 
 void MainWindow::Set2DGraphData()
 {
-  int k = kmeans_alg_->k();
-  QCustomPlot* plot = ui->plot;
   QVector<Pair2D>& centroids = kmeans_alg_->centroids();
   QVector<quint32>& assignments = kmeans_alg_->assignments();
   PairBuckets assignedPairs = GetPairBuckets(assignments);
 
+  DrawData(centroids, assignedPairs);
+}
+
+void MainWindow::DrawData(QVector<Pair2D> &centroids, PairBuckets &assignedPairs)
+{
+  int k = kmeans_alg_->k();
+  QCustomPlot* plot = ui->plot;
   ui->plot->clearGraphs();
 
   for (int i = 0; i < k; i++)
@@ -261,7 +354,7 @@ void MainWindow::Set2DGraphData()
     QCPGraph* g = plot->graph(i);
     g->setData(assignedPairs[i].first, assignedPairs[i].second);
     g->setLineStyle(QCPGraph::lsNone);
-    g->setScatterStyle(QCPScatterStyle(QCPScatterStyle::ssCircle, 4));
+    g->setScatterStyle(pointStyle_);
     g->setPen(QPen(colors_->at(i)));
   }
 
@@ -274,7 +367,7 @@ void MainWindow::Set2DGraphData()
     y.append(centroids[i][1]);
     g->setData(x, y);
     g->setLineStyle(QCPGraph::lsNone);
-    g->setScatterStyle(QCPScatterStyle(QCPScatterStyle::ssCrossCircle, 20));
+    g->setScatterStyle(centroidStyle_);
     g->setPen(QPen(colors_->at(i)));
   }
   plot->replot();
@@ -300,6 +393,45 @@ PairBuckets MainWindow::GetPairBuckets(QVector<quint32> &assignments)
   }
 
   return assignedPairs;
+}
+
+QCPScatterStyle::ScatterShape MainWindow::GetStyleFromString(QString text)
+{
+  text = text.trimmed();
+  text = text.toUpper();
+
+  if (text == "DOT")
+    return QCPScatterStyle::ssDot;
+  if (text == "CROSS")
+    return QCPScatterStyle::ssCross;
+  else if (text == "PLUS")
+    return QCPScatterStyle::ssPlus;
+  else if (text == "CIRCLE")
+    return QCPScatterStyle::ssCircle;
+  else if (text == "DISC")
+    return QCPScatterStyle::ssDisc;
+  else if (text == "SQUARE")
+    return QCPScatterStyle::ssSquare;
+  else if (text == "DIAMOND")
+    return QCPScatterStyle::ssDiamond;
+  else if (text == "STAR")
+    return QCPScatterStyle::ssStar;
+  else if (text == "TRIANGLE")
+    return QCPScatterStyle::ssTriangle;
+  else if (text == "INVERTED TRIANGLE")
+    return QCPScatterStyle::ssTriangleInverted;
+  else if (text == "CROSS SQUARE")
+    return QCPScatterStyle::ssCrossSquare;
+  else if (text == "PLUS SQUARE")
+    return QCPScatterStyle::ssPlusSquare;
+  else if (text == "CROSS CIRCLE")
+    return QCPScatterStyle::ssCrossCircle;
+  else if (text == "PLUS CIRCLE")
+    return QCPScatterStyle::ssPlusCircle;
+  else if (text == "PEACE")
+    return QCPScatterStyle::ssPeace;
+  else
+    return QCPScatterStyle::ssDisc;
 }
 
 MainWindow::~MainWindow()

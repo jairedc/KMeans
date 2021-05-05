@@ -16,6 +16,7 @@
 #include <QTimer>
 #include <QtGlobal>
 #include <QFile>
+#include <qcustomplot.h>
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class MainWindow; }
@@ -81,9 +82,15 @@ public:
   void GenerateData();
   void SetGridBounds(double xMin, double xMax, double yMin, double yMax);
   void Step();
+  void GoBackwardOneStep();
+  void CopyLastStep();
   void Reset();
+  void PointSizeChanged(int size);
+  void PointShapeChanged(QString text);
+  void CentroidShapeChanged(QString text);
   void SetPairVector(QVector<double> x, QVector<double> y);
   void Set2DGraphData();
+  void DrawData(QVector<Pair2D>& centroids, PairBuckets& assignedPairs);
   void SetColorVector(int k);
   void PlaySteps();
   void StopPlaying();
@@ -93,11 +100,13 @@ public:
   void DefaultPlot();
   PairBuckets GetPairBuckets(QVector<quint32>& assignments);
 
+
   QVector<double> xData_;
   QVector<double> yData_;
   QVector<Pair2D> pairs_;
   double minx_, miny_, maxx_, maxy_;
 
+  static QCPScatterStyle::ScatterShape GetStyleFromString(QString text);
 protected:
   void showEvent(QShowEvent* event);
 
@@ -115,5 +124,10 @@ private:
   kmeans<Pair2D>* kmeans_alg_;
   QVector<QColor>* colors_;
   QTimer* timer_;
+
+  QCPScatterStyle pointStyle_, centroidStyle_;
+  QVector<Pair2D> centroidsBackward_;
+  QVector<quint32> assignmentsBackward_;
+  ulong step_;
 };
 #endif // MAINWINDOW_H
