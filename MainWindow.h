@@ -106,7 +106,8 @@ public slots:
 //  void ChangeK(int k);
 
 private:
-  bool kmeansExecuting = false;
+  bool kmeansExecuting_ = false;
+  bool playing_ = false;
 
   Ui::MainWindow *ui;
   RandomData* rndG_;

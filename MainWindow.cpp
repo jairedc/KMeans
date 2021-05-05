@@ -13,9 +13,9 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent),
   timer_ = new QTimer(this);
   timer_->callOnTimeout(this, &MainWindow::Step);
 
-  kmeansExecuting = false;
+  kmeansExecuting_ = false;
+  playing_ = false;
   SetSignals();
-//  ui->kmeansGridLayout->setAlignment(Qt::alignRight);
 }
 
 void MainWindow::showEvent(QShowEvent *event)
@@ -57,17 +57,20 @@ void MainWindow::PlaySteps()
   ui->playButton->setEnabled(false);
   ui->stopButton->setEnabled(true);
   timer_->start(ui->playSpeedSpinBox->value());
+  playing_ = true;
 }
 
 void MainWindow::ChangePlayTimeout(int timeout)
 {
   timer_->stop();
-  timer_->start(timeout);
+  if (playing_)
+    timer_->start(timeout);
 }
 
 void MainWindow::StopPlaying()
 {
   timer_->stop();
+  playing_ = false;
   ui->playButton->setEnabled(true);
   ui->stepButton->setEnabled(true);
   ui->stopButton->setEnabled(false);
@@ -196,9 +199,9 @@ void MainWindow::Step()
     if (kmeans_alg_ == nullptr)
       kmeans_alg_ = new kmeans<Pair2D>(k, pairs_);
 
-    if (!kmeansExecuting)
+    if (!kmeansExecuting_)
     {
-      kmeansExecuting = true;
+      kmeansExecuting_ = true;
       kmeans_alg_->setK(k);
       SetColorVector(k);
       EnableControls(false);
@@ -229,7 +232,8 @@ void MainWindow::Reset()
 {
   timer_->stop();
   DefaultPlot();
-  kmeansExecuting = false;
+  kmeansExecuting_ = false;
+  playing_ = false;
   EnableControls(true);
   ui->stopButton->setEnabled(false);
 }
