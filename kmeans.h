@@ -4,7 +4,9 @@
 #include <QVector>
 #include <QRandomGenerator>
 #include <functional>
+#include <random>
 
+enum InitializeType {Random, Sample, Kpp};
 
 template <class T>
 class kmeans
@@ -15,6 +17,9 @@ public:
 
   void setData(QVector<T> data);
   void setK(int k);
+  void setInitialization(InitializeType type);
+//  void setRandomInitBounds2D(double minX, double maxX,
+//                             double minY, double maxY);
 
   void step(std::function<double(T, T)> d);
   void step(std::function<double(T, T)> d, int steps);
@@ -28,6 +33,8 @@ public:
   ~kmeans();
 
 private:
+  InitializeType initType_;
+//  double minX_, maxX_, minY_, maxY_;
   bool initialized_;
   int maxIterations_;
   int currIteration_;
@@ -37,6 +44,11 @@ private:
   QVector<quint32> assignments_;
 
   QRandomGenerator* rand_;
+
+  void initialize();
+  void initializeRandom();
+  void initializeSample();
+  void initializeKpp();
 };
 
 #include "kmeans.cpp"

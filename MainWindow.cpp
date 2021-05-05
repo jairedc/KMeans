@@ -14,8 +14,8 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent),
   timer_->callOnTimeout(this, &MainWindow::Step);
 
   kmeansExecuting = false;
-
   SetSignals();
+//  ui->kmeansGridLayout->setAlignment(Qt::alignRight);
 }
 
 void MainWindow::showEvent(QShowEvent *event)
@@ -201,6 +201,13 @@ void MainWindow::Step()
       kmeans_alg_->setK(k);
       SetColorVector(k);
       EnableControls(false);
+
+      if (ui->initComboBox->currentText() == "Random")
+        kmeans_alg_->setInitialization(InitializeType::Random);
+      if (ui->initComboBox->currentText() == "Kpp")
+        kmeans_alg_->setInitialization(InitializeType::Kpp);
+      if (ui->initComboBox->currentText() == "Sample")
+        kmeans_alg_->setInitialization(InitializeType::Sample);
     }
     std::function<double(Pair2D, Pair2D)> distF;
     if (ui->distanceFComboBox->currentText() == "L1")

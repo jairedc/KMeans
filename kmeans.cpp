@@ -11,6 +11,11 @@ kmeans<T>::kmeans(int k, quint32 maxIterations)
   currIteration_ = 0;
   k_ = k;
   centroids_.resize(k_);
+  initType_ = InitializeType::Sample;
+//  minX_ = -10.0;
+//  maxX_ = 10.0;
+//  minY_ = -10.0;
+//  maxY_ = 10.0;
 
   rand_ = QRandomGenerator::global();
 }
@@ -23,11 +28,28 @@ kmeans<T>::kmeans(int k, QVector<T> data, quint32 maxIterations)
   currIteration_ = 0;
   k_ = k;
   data_ = data;
+  initType_ = InitializeType::Sample;
 
   centroids_.resize(k_);
   assignments_.resize(data_.size());
   rand_ = QRandomGenerator::global();
 }
+
+template <class T>
+void kmeans<T>::setInitialization(InitializeType type)
+{
+  initType_ = type;
+}
+
+//template<class T>
+//void kmeans<T>::setRandomInitBounds2D(double minX, double maxX,
+//                                      double minY, double maxY)
+//{
+//  minX_ = minX;
+//  maxX_ = maxX;
+//  minY_ = minY;
+//  maxY_ = maxY;
+//}
 
 template <class T>
 void kmeans<T>::setData(QVector<T> data)
@@ -50,8 +72,7 @@ void kmeans<T>::step(std::function<double(T, T)> d)
   if (!initialized_)
   {
     initialized_ = true;
-    std::generate(centroids_.begin(), centroids_.end(),
-                [this]() { return data_[rand_->bounded(data_.size())]; });
+    initialize();
   }
   if (currIteration_ >= maxIterations_)
     return;
@@ -129,6 +150,40 @@ template <class T>
 kmeans<T>::~kmeans()
 {
   delete rand_;
+}
+
+template<class T>
+void kmeans<T>::initialize()
+{
+  switch (initType_)
+  {
+//    case kmeans::Random: initializeRandom(); break;
+    case InitializeType::Sample: initializeSample(); break;
+    case InitializeType::Kpp:    initializeKpp();    break;
+  }
+}
+
+//template<class T>
+//void kmeans<T>::initializeRandom()
+//{
+//  std::generate(centroids_.begin(), centroids_.end(),
+//  [this]()
+//  {
+//    return data_[rand_->bounded(data_.size())];
+//  });
+//}
+
+template<class T>
+void kmeans<T>::initializeSample()
+{
+  std::generate(centroids_.begin(), centroids_.end(),
+              [this]() { return data_[rand_->bounded(data_.size())]; });
+}
+
+template<class T>
+void kmeans<T>::initializeKpp()
+{
+
 }
 
 #endif
