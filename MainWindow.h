@@ -120,6 +120,7 @@ public:
   void DefaultPlot();
   PairBuckets GetPairBuckets(QVector<quint32>& assignments);
   void ShowInfoDialog();
+  bool CheckDegenerateCases();
   double FindXMin();
   double FindXMax();
   double FindYMin();

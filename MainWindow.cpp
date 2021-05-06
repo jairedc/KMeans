@@ -223,50 +223,58 @@ void MainWindow::Step()
   }
   else
   {
+    bool degenerate = false;
     int k = ui->kSpinBox->value();
     if (kmeans_alg_ == nullptr)
       kmeans_alg_ = new kmeans<Pair2D>(k, pairs_);
 
     if (!kmeansExecuting_)
     {
-      kmeansExecuting_ = true;
-      kmeans_alg_->setK(k);
-      SetColorVector(k);
-      EnableControls(false);
-
-      if (ui->initComboBox->currentText() == "Random")
+      degenerate = CheckDegenerateCases();
+      if (!degenerate)
       {
-        QVector<Pair2D> randomCentroids = Pair2D::MakeRandomPairs(k,
-                               FindXMin(), FindXMax(), FindYMin(), FindYMax());
-        kmeans_alg_->setInitialization(InitializeType::Random);
-        kmeans_alg_->setRandomCentroids(randomCentroids);
+        kmeansExecuting_ = true;
+        kmeans_alg_->setK(k);
+        SetColorVector(k);
+        EnableControls(false);
+
+        if (ui->initComboBox->currentText() == "Random")
+        {
+          QVector<Pair2D> randomCentroids = Pair2D::MakeRandomPairs(k,
+                                FindXMin(), FindXMax(), FindYMin(), FindYMax());
+          kmeans_alg_->setInitialization(InitializeType::Random);
+          kmeans_alg_->setRandomCentroids(randomCentroids);
+        }
+        if (ui->initComboBox->currentText() == "Kpp")
+          kmeans_alg_->setInitialization(InitializeType::Kpp);
+        if (ui->initComboBox->currentText() == "Sample")
+          kmeans_alg_->setInitialization(InitializeType::Sample);
       }
-      if (ui->initComboBox->currentText() == "Kpp")
-        kmeans_alg_->setInitialization(InitializeType::Kpp);
-      if (ui->initComboBox->currentText() == "Sample")
-        kmeans_alg_->setInitialization(InitializeType::Sample);
     }
-    std::function<double(Pair2D, Pair2D)> distF;
-    if (ui->distanceFComboBox->currentText() == "L1")
-      distF = Pair2D::L1Distance;
-    else
-      distF = Pair2D::EuclideanDistance;
-
-    if (step_)
+    if (!degenerate)
     {
-      CopyLastStep();
-      if (!playing_)
-        ui->backOneButton->setEnabled(true);
-    }
+      std::function<double(Pair2D, Pair2D)> distF;
+      if (ui->distanceFComboBox->currentText() == "L1")
+        distF = Pair2D::L1Distance;
+      else
+        distF = Pair2D::EuclideanDistance;
 
-    int stepValue = ui->stepSpinBox->value();
-    if (stepValue == 1)
-      kmeans_alg_->step(distF);
-    else
-      kmeans_alg_->step(distF, stepValue);
-    step_++;
-    Set2DGraphData();
-    infoDialog_->ChangeInfo(step_, kmeans_alg_->getEnergy());
+      if (step_)
+      {
+        CopyLastStep();
+        if (!playing_)
+          ui->backOneButton->setEnabled(true);
+      }
+
+      int stepValue = ui->stepSpinBox->value();
+      if (stepValue == 1)
+        kmeans_alg_->step(distF);
+      else
+        kmeans_alg_->step(distF, stepValue);
+      step_++;
+      Set2DGraphData();
+      infoDialog_->ChangeInfo(step_, kmeans_alg_->getEnergy());
+    }
   }
 }
 
@@ -410,6 +418,25 @@ PairBuckets MainWindow::GetPairBuckets(QVector<quint32> &assignments)
 void MainWindow::ShowInfoDialog()
 {
   infoDialog_->show();
+}
+
+bool MainWindow::CheckDegenerateCases()
+{
+  int k = ui->kSpinBox->value();
+  int n = pairs_.size();
+
+  if (k == 0 || k == 1)
+  {
+    eMsg_->showMessage("k must be 2 or greater.");
+    return true;
+  }
+  else if (k > n)
+  {
+    eMsg_->showMessage("k can't be greater than the number of points.");
+    return true;
+  }
+  else
+    return false;
 }
 
 double MainWindow::FindXMin()
