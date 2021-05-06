@@ -104,7 +104,8 @@ void kmeans<T>::step(std::function<double(T, T)> d)
 
   // Calculate new cluster centers
   for (qint32 i = 0; i < k_; i++)
-    centroids_[i] = newCentroids[i] / cCount[i];
+    if (cCount[i] != 0)
+      centroids_[i] = newCentroids[i] / cCount[i];
 }
 
 template <class T>
