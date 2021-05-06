@@ -82,6 +82,7 @@ void MainWindow::PlaySteps()
   ui->stepButton->setEnabled(false);
   ui->playButton->setEnabled(false);
   ui->stopButton->setEnabled(true);
+  ui->resetButton->setEnabled(false);
   ui->backOneButton->setEnabled(false);
   timer_->start(ui->playSpeedSpinBox->value());
   playing_ = true;
@@ -102,6 +103,7 @@ void MainWindow::StopPlaying()
   ui->stepButton->setEnabled(true);
   ui->stopButton->setEnabled(false);
   ui->backOneButton->setEnabled(true);
+  ui->resetButton->setEnabled(true);
 }
 
 void MainWindow::EnableControls(bool state)
