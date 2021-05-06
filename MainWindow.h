@@ -18,6 +18,7 @@
 #include <QFile>
 #include <qcustomplot.h>
 #include <Info.h>
+#include <ViewWidget.h>
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class MainWindow; }

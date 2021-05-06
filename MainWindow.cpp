@@ -26,6 +26,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent),
   centroidStyle_.setSize(20);
 
   SetSignals();
+  ui->viewWidget->hide();
 }
 
 void MainWindow::showEvent(QShowEvent *event)

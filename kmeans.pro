@@ -11,6 +11,7 @@ CONFIG += c++11
 SOURCES += \
     Info.cpp \
     RandomData.cpp \
+    ViewWidget.cpp \
     kmeans.cpp \
     main.cpp \
     MainWindow.cpp \
@@ -20,6 +21,7 @@ HEADERS += \
     Info.h \
     MainWindow.h \
     RandomData.h \
+    ViewWidget.h \
     kmeans.h \
     qcustomplot.h
 
