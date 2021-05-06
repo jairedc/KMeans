@@ -5,6 +5,9 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent),
                                           ui(new Ui::MainWindow)
 {
   ui->setupUi(this);
+  infoDialog_ = new Info(this);
+  infoDialog_->ChangeInfo(0, 0.0);
+
   eMsg_ = new QErrorMessage(this);
   eMsg_->setWindowModality(Qt::WindowModal);
 
@@ -64,6 +67,8 @@ void MainWindow::SetSignals()
           this, &MainWindow::PointSizeChanged);
   connect(ui->importAction, &QAction::triggered,
           this, &MainWindow::ImportData);
+  connect(ui->infoAction, &QAction::triggered,
+          this, &MainWindow::ShowInfoDialog);
   connect(ui->pointShapeComboBox, &QComboBox::currentTextChanged,
           this, &MainWindow::PointShapeChanged);
   connect(ui->centroidShapeComboBox, &QComboBox::currentTextChanged,
@@ -256,6 +261,7 @@ void MainWindow::Step()
       kmeans_alg_->step(distF, stepValue);
     step_++;
     Set2DGraphData();
+    infoDialog_->ChangeInfo(step_, kmeans_alg_->getEnergy());
   }
 }
 
@@ -286,6 +292,7 @@ void MainWindow::Reset()
   EnableControls(true);
   ui->stopButton->setEnabled(false);
   ui->backOneButton->setEnabled(false);
+  infoDialog_->ChangeInfo(0, 0.0);
   step_ = 0;
 }
 
@@ -395,6 +402,11 @@ PairBuckets MainWindow::GetPairBuckets(QVector<quint32> &assignments)
   return assignedPairs;
 }
 
+void MainWindow::ShowInfoDialog()
+{
+  infoDialog_->show();
+}
+
 QCPScatterStyle::ScatterShape MainWindow::GetStyleFromString(QString text)
 {
   text = text.trimmed();
@@ -441,5 +453,6 @@ MainWindow::~MainWindow()
   delete eMsg_;
   delete kmeans_alg_;
   delete colors_;
+  delete infoDialog_;
 }
 

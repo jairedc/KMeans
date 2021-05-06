@@ -17,6 +17,7 @@
 #include <QtGlobal>
 #include <QFile>
 #include <qcustomplot.h>
+#include <Info.h>
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class MainWindow; }
@@ -99,6 +100,7 @@ public:
   void Parse2D(QTextStream& in);
   void DefaultPlot();
   PairBuckets GetPairBuckets(QVector<quint32>& assignments);
+  void ShowInfoDialog();
 
 
   QVector<double> xData_;
@@ -119,6 +121,7 @@ private:
   bool playing_ = false;
 
   Ui::MainWindow *ui;
+  Info* infoDialog_;
   RandomData* rndG_;
   QErrorMessage* eMsg_;
   kmeans<Pair2D>* kmeans_alg_;

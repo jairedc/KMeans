@@ -649,16 +649,28 @@
    </property>
    <widget class="QMenu" name="menuData">
     <property name="title">
-     <string>Data</string>
+     <string>&amp;Data</string>
     </property>
     <addaction name="importAction"/>
    </widget>
+   <widget class="QMenu" name="menuView">
+    <property name="title">
+     <string>&amp;View</string>
+    </property>
+    <addaction name="infoAction"/>
+   </widget>
    <addaction name="menuData"/>
+   <addaction name="menuView"/>
   </widget>
   <widget class="QStatusBar" name="statusbar"/>
   <action name="importAction">
    <property name="text">
     <string>&amp;Import...</string>
+   </property>
+  </action>
+  <action name="infoAction">
+   <property name="text">
+    <string>K-Means &amp;Info...</string>
    </property>
   </action>
  </widget>

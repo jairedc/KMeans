@@ -12,6 +12,7 @@ kmeans<T>::kmeans(int k, quint32 maxIterations)
   k_ = k;
   centroids_.resize(k_);
   initType_ = InitializeType::Sample;
+  energy_ = 0.0;
 //  minX_ = -10.0;
 //  maxX_ = 10.0;
 //  minY_ = -10.0;
@@ -29,6 +30,7 @@ kmeans<T>::kmeans(int k, QVector<T> data, quint32 maxIterations)
   k_ = k;
   data_ = data;
   initType_ = InitializeType::Sample;
+  energy_ = 0.0;
 
   centroids_.resize(k_);
   assignments_.resize(data_.size());
@@ -76,6 +78,7 @@ void kmeans<T>::step(std::function<double(T, T)> d)
   }
   if (currIteration_ >= maxIterations_)
     return;
+  energy_ = 0.0;
 
   // Assign cluster centers
   T newCentroids[k_] = {};
@@ -96,6 +99,7 @@ void kmeans<T>::step(std::function<double(T, T)> d)
         assignedC = c;
       }
     }
+    energy_ += minD;
     assignments_[p] = assignedC;
 
     newCentroids[assignedC] += data_[p];
@@ -126,6 +130,7 @@ void kmeans<T>::reset()
 {
   centroids_.resize(k_);
   initialized_ = false;
+  energy_ = 0.0;
 }
 
 template<class T>

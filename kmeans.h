@@ -18,6 +18,7 @@ public:
   void setData(QVector<T> data);
   void setK(int k);
   void setInitialization(InitializeType type);
+  double getEnergy() { return energy_; };
 //  void setRandomInitBounds2D(double minX, double maxX,
 //                             double minY, double maxY);
 
@@ -35,6 +36,7 @@ public:
 private:
   InitializeType initType_;
 //  double minX_, maxX_, minY_, maxY_;
+  double energy_;
   bool initialized_;
   int maxIterations_;
   int currIteration_;

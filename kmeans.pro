@@ -9,6 +9,7 @@ CONFIG += c++11
 #DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000    # disables all the APIs deprecated before Qt 6.0.0
 
 SOURCES += \
+    Info.cpp \
     RandomData.cpp \
     kmeans.cpp \
     main.cpp \
@@ -16,12 +17,14 @@ SOURCES += \
     qcustomplot.cpp
 
 HEADERS += \
+    Info.h \
     MainWindow.h \
     RandomData.h \
     kmeans.h \
     qcustomplot.h
 
 FORMS += \
+    Info.ui \
     MainWindow.ui
 
 # Default rules for deployment.
