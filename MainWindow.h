@@ -69,6 +69,25 @@ struct Pair2D
   {
     return qAbs(lhs[0] - rhs[0]) + qAbs(lhs[1] - rhs[1]);
   }
+
+  static QVector<Pair2D> MakeRandomPairs(int size, double minX, double maxX,
+                                                   double minY, double maxY)
+  {
+    QVector<Pair2D> pairs;
+    QVector<double> xData, yData;
+    std::random_device rd;
+    std::mt19937_64 gen(rd());
+    uDistd xDist(minX, maxX);
+    uDistd yDist(minY, maxY);
+
+    xData = RandomData::Generate(xDist, gen, size);
+    yData = RandomData::Generate(yDist, gen, size);
+
+    for (int i = 0; i < size; i++)
+      pairs.append(Pair2D(xData[i], yData[i]));
+
+    return pairs;
+  }
 };
 
 class MainWindow : public QMainWindow
@@ -101,6 +120,10 @@ public:
   void DefaultPlot();
   PairBuckets GetPairBuckets(QVector<quint32>& assignments);
   void ShowInfoDialog();
+  double FindXMin();
+  double FindXMax();
+  double FindYMin();
+  double FindYMax();
 
 
   QVector<double> xData_;

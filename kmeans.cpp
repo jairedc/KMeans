@@ -13,10 +13,7 @@ kmeans<T>::kmeans(int k, quint32 maxIterations)
   centroids_.resize(k_);
   initType_ = InitializeType::Sample;
   energy_ = 0.0;
-//  minX_ = -10.0;
-//  maxX_ = 10.0;
-//  minY_ = -10.0;
-//  maxY_ = 10.0;
+  randomCentroidsInitialized_ = false;
 
   rand_ = QRandomGenerator::global();
 }
@@ -31,6 +28,7 @@ kmeans<T>::kmeans(int k, QVector<T> data, quint32 maxIterations)
   data_ = data;
   initType_ = InitializeType::Sample;
   energy_ = 0.0;
+  randomCentroidsInitialized_ = false;
 
   centroids_.resize(k_);
   assignments_.resize(data_.size());
@@ -43,15 +41,12 @@ void kmeans<T>::setInitialization(InitializeType type)
   initType_ = type;
 }
 
-//template<class T>
-//void kmeans<T>::setRandomInitBounds2D(double minX, double maxX,
-//                                      double minY, double maxY)
-//{
-//  minX_ = minX;
-//  maxX_ = maxX;
-//  minY_ = minY;
-//  maxY_ = maxY;
-//}
+template<class T>
+void kmeans<T>::setRandomCentroids(QVector<T> centroids)
+{
+  centroids_ = centroids;
+  randomCentroidsInitialized_ = true;
+}
 
 template <class T>
 void kmeans<T>::setData(QVector<T> data)
@@ -74,7 +69,8 @@ void kmeans<T>::step(std::function<double(T, T)> d)
   if (!initialized_)
   {
     initialized_ = true;
-    initialize(d);
+    if (!initialize(d))
+      return;
   }
   if (currIteration_ >= maxIterations_)
     return;
@@ -130,6 +126,7 @@ void kmeans<T>::reset()
 {
   centroids_.resize(k_);
   initialized_ = false;
+  randomCentroidsInitialized_ = false;
   energy_ = 0.0;
 }
 
@@ -158,35 +155,33 @@ kmeans<T>::~kmeans()
 }
 
 template<class T>
-void kmeans<T>::initialize(std::function<double(T, T)> d)
+bool kmeans<T>::initialize(std::function<double(T, T)> d)
 {
   switch (initType_)
   {
-    case InitializeType::Random: initializeSample(); break;
-    case InitializeType::Sample: initializeSample(); break;
-    case InitializeType::Kpp:    initializeKpp(d);   break;
+    case InitializeType::Random: return checkRandomCentroids(); break;
+    case InitializeType::Sample: return initializeSample();     break;
+    case InitializeType::Kpp:    return initializeKpp(d);       break;
+    default: return false;                                      break;
   }
 }
 
-//template<class T>
-//void kmeans<T>::initializeRandom()
-//{
-//  std::generate(centroids_.begin(), centroids_.end(),
-//  [this]()
-//  {
-//    return data_[rand_->bounded(data_.size())];
-//  });
-//}
-
 template<class T>
-void kmeans<T>::initializeSample()
+bool kmeans<T>::checkRandomCentroids()
 {
-  std::generate(centroids_.begin(), centroids_.end(),
-              [this]() { return data_[rand_->bounded(data_.size())]; });
+  return randomCentroidsInitialized_;
 }
 
 template<class T>
-void kmeans<T>::initializeKpp(std::function<double(T, T)> d)
+bool kmeans<T>::initializeSample()
+{
+  std::generate(centroids_.begin(), centroids_.end(),
+              [this]() { return data_[rand_->bounded(data_.size())]; });
+  return true;
+}
+
+template<class T>
+bool kmeans<T>::initializeKpp(std::function<double(T, T)> d)
 {
   QVector<double> distances(data_.size()), cdf(data_.size());
   double currentDistance, minDistance, totalDistance;
@@ -232,6 +227,7 @@ void kmeans<T>::initializeKpp(std::function<double(T, T)> d)
       }
     }
   }
+  return true;
 }
 
 #endif

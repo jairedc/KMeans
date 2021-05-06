@@ -19,8 +19,7 @@ public:
   void setK(int k);
   void setInitialization(InitializeType type);
   double getEnergy() { return energy_; };
-//  void setRandomInitBounds2D(double minX, double maxX,
-//                             double minY, double maxY);
+  void setRandomCentroids(QVector<T> centroids);
 
   void step(std::function<double(T, T)> d);
   void step(std::function<double(T, T)> d, int steps);
@@ -35,9 +34,8 @@ public:
 
 private:
   InitializeType initType_;
-//  double minX_, maxX_, minY_, maxY_;
   double energy_;
-  bool initialized_;
+  bool initialized_, randomCentroidsInitialized_;
   int maxIterations_;
   int currIteration_;
   int k_;
@@ -47,10 +45,10 @@ private:
 
   QRandomGenerator* rand_;
 
-  void initialize(std::function<double(T, T)> d);
-  void initializeRandom();
-  void initializeSample();
-  void initializeKpp(std::function<double(T, T)> d);
+  bool initialize(std::function<double(T, T)> d);
+  bool checkRandomCentroids();
+  bool initializeSample();
+  bool initializeKpp(std::function<double(T, T)> d);
 };
 
 #include "kmeans.cpp"

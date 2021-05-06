@@ -235,7 +235,12 @@ void MainWindow::Step()
       EnableControls(false);
 
       if (ui->initComboBox->currentText() == "Random")
+      {
+        QVector<Pair2D> randomCentroids = Pair2D::MakeRandomPairs(k,
+                               FindXMin(), FindXMax(), FindYMin(), FindYMax());
         kmeans_alg_->setInitialization(InitializeType::Random);
+        kmeans_alg_->setRandomCentroids(randomCentroids);
+      }
       if (ui->initComboBox->currentText() == "Kpp")
         kmeans_alg_->setInitialization(InitializeType::Kpp);
       if (ui->initComboBox->currentText() == "Sample")
@@ -405,6 +410,42 @@ PairBuckets MainWindow::GetPairBuckets(QVector<quint32> &assignments)
 void MainWindow::ShowInfoDialog()
 {
   infoDialog_->show();
+}
+
+double MainWindow::FindXMin()
+{
+  double minX = pairs_[0][0];
+  for (int i = 1; i < pairs_.size(); i++)
+    if (pairs_[i][0] < minX)
+      minX = pairs_[i][0];
+  return minX;
+}
+
+double MainWindow::FindXMax()
+{
+  double maxX = pairs_[0][0];
+  for (int i = 1; i < pairs_.size(); i++)
+    if (pairs_[i][0] > maxX)
+      maxX = pairs_[i][0];
+  return maxX;
+}
+
+double MainWindow::FindYMin()
+{
+  double minY = pairs_[0][1];
+  for (int i = 1; i < pairs_.size(); i++)
+    if (pairs_[i][1] < minY)
+      minY = pairs_[i][1];
+  return minY;
+}
+
+double MainWindow::FindYMax()
+{
+  double maxY = pairs_[0][1];
+  for (int i = 1; i < pairs_.size(); i++)
+    if (pairs_[i][1] > maxY)
+      maxY = pairs_[i][1];
+  return maxY;
 }
 
 QCPScatterStyle::ScatterShape MainWindow::GetStyleFromString(QString text)
