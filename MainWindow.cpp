@@ -8,6 +8,8 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent),
   infoDialog_ = new Info(this);
   infoDialog_->ChangeInfo(0, 0.0);
 
+  controls3DDialog_ = new Controls3D(this);
+
   eMsg_ = new QErrorMessage(this);
   eMsg_->setWindowModality(Qt::WindowModal);
 
@@ -26,7 +28,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent),
   centroidStyle_.setSize(20);
 
   SetSignals();
-  ui->viewWidget->hide();
+  SwitchTo3D();
 }
 
 void MainWindow::showEvent(QShowEvent *event)
@@ -76,6 +78,14 @@ void MainWindow::SetSignals()
           this, &MainWindow::CentroidShapeChanged);
   connect(ui->backOneButton, &QPushButton::clicked,
           this, &MainWindow::GoBackwardOneStep);
+  connect(ui->switch2DAction, &QAction::triggered,
+          this, &MainWindow::SwitchTo2D);
+  connect(ui->switch3DAction, &QAction::triggered,
+          this, &MainWindow::SwitchTo3D);
+  connect(ui->controls3DAction, &QAction::triggered,
+          this, &MainWindow::Show3DControls);
+  connect(controls3DDialog_, &Controls3D::directionClicked,
+          this, &MainWindow::Change3DEye);
 }
 
 void MainWindow::PlaySteps()
@@ -122,6 +132,16 @@ void MainWindow::EnableControls(bool state)
 
 void MainWindow::ImportData()
 {
+  if (mode_ == Mode::TwoD)
+    Import2D();
+  else if (mode_ == Mode::ThreeD)
+    Import3D();
+
+
+}
+
+void MainWindow::Import2D()
+{
   QString filename = QFileDialog::getOpenFileName(this, "Open Data File",
                                                   "/home", tr("*.txt"));
   qDebug() << "Filename: " << filename;
@@ -146,7 +166,37 @@ void MainWindow::ImportData()
     file.close();
     SetGridBounds(minx_, maxx_, miny_, maxy_);
     DefaultPlot();
-    SetPairVector(xData_, yData_);
+    Set2DPairVector(xData_, yData_);
+  }
+}
+
+void MainWindow::Import3D()
+{
+  QString filename = QFileDialog::getOpenFileName(this, "Open Data File",
+                                                  "/home", tr("*.txt"));
+  qDebug() << "Filename: " << filename;
+  if (filename.isEmpty())
+    eMsg_->showMessage("Empty filename, data not set.");
+  else
+  {
+    QFile file(filename);
+    if (!file.open(QIODevice::ReadOnly | QIODevice::Text))
+    {
+      eMsg_->showMessage("Unable to open data file.");
+      return;
+    }
+
+    QTextStream in(&file);
+
+    QString nText = in.readLine();
+    QString dimText = in.readLine();
+
+    if (dimText.toInt() == 3) Parse3D(in);
+
+    file.close();
+    // TODO: set 3D bounds and other information
+    Set3DPairVector(xData_, yData_, zData_);
+    ui->viewWidget->setPoints(xData_, yData_, zData_);
   }
 }
 
@@ -181,6 +231,50 @@ void MainWindow::Parse2D(QTextStream& in)
   }
 }
 
+void MainWindow::Parse3D(QTextStream &in)
+{
+  QString line = in.readLine();
+  QStringList data = line.split(' ');
+
+  maxx_ = data[0].toDouble();
+  minx_ = data[0].toDouble();
+  xData_.append(minx_);
+
+  maxy_ = data[1].toDouble();
+  miny_ = data[1].toDouble();
+  yData_.append(miny_);
+
+  maxz_ = data[2].toDouble();
+  minz_ = data[2].toDouble();
+  zData_.append(minz_);
+
+  double x, y, z;
+  while (!in.atEnd())
+  {
+    QString line = in.readLine();
+    QStringList data = line.split(' ');
+
+    x = data[0].toDouble();
+    y = data[1].toDouble();
+    z = data[2].toDouble();
+    xData_.append(x);
+    yData_.append(y);
+    zData_.append(z);
+
+    if (x > maxx_) maxx_ = x;
+    if (y > maxy_) maxy_ = y;
+    if (z > maxz_) maxz_ = z;
+    if (x < minx_) minx_ = x;
+    if (y < miny_) miny_ = y;
+    if (z < minz_) minz_ = z;
+  }
+}
+
+void MainWindow::Zoom3D()
+{
+
+}
+
 void MainWindow::DefaultPlot()
 {
   ui->plot->clearGraphs();
@@ -195,6 +289,14 @@ void MainWindow::DefaultPlot()
 
 void MainWindow::GenerateData()
 {
+  if (mode_ == Mode::TwoD)
+    Generate2D();
+  else if (mode_ == Mode::ThreeD)
+    Generate3D();
+}
+
+void MainWindow::Generate2D()
+{
   std::random_device rd;
   std::mt19937_64 gen(rd());
   uDistd xDist(ui->xMinSpinBox->value(), ui->xMaxSpinBox->value());
@@ -203,12 +305,30 @@ void MainWindow::GenerateData()
   xData_ = RandomData::Generate(xDist, gen, ui->nDataSpinBox->value());
   yData_ = RandomData::Generate(yDist, gen, ui->nDataSpinBox->value());
 
-  SetPairVector(xData_, yData_);
+  Set2DPairVector(xData_, yData_);
 
   SetGridBounds(ui->xMinSpinBox->value(), ui->xMaxSpinBox->value(),
                 ui->yMinSpinBox->value(), ui->yMaxSpinBox->value());
 
   DefaultPlot();
+}
+
+void MainWindow::Generate3D()
+{
+  std::random_device rd;
+  std::mt19937_64 gen(rd());
+  uDistd xDist(ui->xMinSpinBox->value(), ui->xMaxSpinBox->value());
+  uDistd yDist(ui->yMinSpinBox->value(), ui->yMaxSpinBox->value());
+  uDistd zDist(ui->zMinSpinBox->value(), ui->zMaxSpinBox->value());
+
+  xData_ = RandomData::Generate(xDist, gen, ui->nDataSpinBox->value());
+  yData_ = RandomData::Generate(yDist, gen, ui->nDataSpinBox->value());
+  zData_ = RandomData::Generate(zDist, gen, ui->nDataSpinBox->value());
+
+  Set3DPairVector(xData_, yData_, zData_);
+
+  // TODO: set 3D bounds
+  ui->viewWidget->setPoints(xData_, yData_, zData_);
 }
 
 void MainWindow::SetGridBounds(double xMin, double xMax,
@@ -349,11 +469,19 @@ void MainWindow::CentroidShapeChanged(QString text)
   }
 }
 
-void MainWindow::SetPairVector(QVector<double> x, QVector<double> y)
+void MainWindow::Set2DPairVector(QVector<double> x, QVector<double> y)
 {
   pairs_.clear();
   for (int i = 0; i < x.size(); i++)
     pairs_.append(Pair2D(x[i], y[i]));
+}
+
+void MainWindow::Set3DPairVector(QVector<double> x, QVector<double> y,
+                                 QVector<double> z)
+{
+  pairs3D_.clear();
+  for (int i = 0; i < x.size(); i++)
+    pairs3D_.append(Pair3D(x[i], y[i], z[i]));
 }
 
 void MainWindow::Set2DGraphData()
@@ -442,6 +570,25 @@ bool MainWindow::CheckDegenerateCases()
     return false;
 }
 
+void MainWindow::Show3DControls()
+{
+  if (mode_ == Mode::ThreeD)
+    controls3DDialog_->show();
+}
+
+void MainWindow::Change3DEye(QString direction)
+{
+  ViewWidget* vw = ui->viewWidget;
+  if (direction == "up")
+    vw->moveEye(0.0f, -0.01f, 0.0f);
+  else if (direction == "down")
+    vw->moveEye(0.0f, 0.01f, 0.0f);
+  else if (direction == "left")
+    vw->moveEye(-0.01f, 0.0f, 0.0f);
+  else if (direction == "right")
+    vw->moveEye(0.01f, 0.0f, 0.0f);
+}
+
 double MainWindow::FindXMin()
 {
   double minX = pairs_[0][0];
@@ -525,5 +672,31 @@ MainWindow::~MainWindow()
   delete kmeans_alg_;
   delete colors_;
   delete infoDialog_;
+  delete controls3DDialog_;
 }
 
+void MainWindow::SwitchTo2D()
+{
+  mode_ = Mode::TwoD;
+  ui->viewWidget->hide();
+  ui->plot->show();
+  ui->switch2DAction->setEnabled(false);
+  ui->switch3DAction->setEnabled(true);
+
+  ui->zBoundsLabel->setEnabled(false);
+  ui->zMinSpinBox->setEnabled(false);
+  ui->zMaxSpinBox->setEnabled(false);
+}
+
+void MainWindow::SwitchTo3D()
+{
+  mode_ = Mode::ThreeD;
+  ui->plot->hide();
+  ui->viewWidget->show();
+  ui->switch2DAction->setEnabled(true);
+  ui->switch3DAction->setEnabled(false);
+
+  ui->zBoundsLabel->setEnabled(true);
+  ui->zMinSpinBox->setEnabled(true);
+  ui->zMaxSpinBox->setEnabled(true);
+}

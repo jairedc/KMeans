@@ -19,6 +19,9 @@
 #include <qcustomplot.h>
 #include <Info.h>
 #include <ViewWidget.h>
+#include <QWheelEvent>
+#include <QWidget>
+#include <Controls3D.h>
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class MainWindow; }
@@ -91,16 +94,90 @@ struct Pair2D
   }
 };
 
+struct Pair3D
+{
+  QVector3D pair_;
+
+  Pair3D() {}
+  Pair3D(double x, double y, double z) { pair_ = QVector3D(x, y, z); }
+
+  double operator[](const bool& i) const
+  {
+    return pair_[i];
+  }
+
+  Pair3D operator+(const Pair2D& rhs)
+  {
+    Pair3D sum(pair_[0] + rhs[0], pair_[1] + rhs[2], pair_[2] + rhs[2]);
+    return sum;
+  }
+
+  Pair3D& operator+=(const Pair2D& rhs)
+  {
+    pair_[0] += rhs[0];
+    pair_[1] += rhs[1];
+    pair_[2] += rhs[2];
+    return *this;
+  }
+
+  Pair3D operator/(const quint32& scalar)
+  {
+    Pair3D quotient(pair_[0] / scalar, pair_[1] / scalar, pair_[2] / scalar);
+    return quotient;
+  }
+
+  static double EuclideanDistance(Pair3D lhs, Pair3D rhs)
+  {
+    return qSqrt(qPow(lhs[0] - rhs[0], 2) + qPow(lhs[1] - rhs[1], 2) +
+                 qPow(lhs[2] - rhs[2], 2));
+  }
+
+  static double L1Distance(Pair2D lhs, Pair2D rhs)
+  {
+    return qAbs(lhs[0] - rhs[0]) + qAbs(lhs[1] - rhs[1]) +
+           qAbs(lhs[2] - rhs[2]);
+  }
+
+  static QVector<Pair3D> MakeRandomPairs(int size, double minX, double maxX,
+                                                   double minY, double maxY,
+                                                   double minZ, double maxZ)
+  {
+    QVector<Pair3D> pairs;
+    QVector<double> xData, yData, zData;
+    std::random_device rd;
+    std::mt19937_64 gen(rd());
+    uDistd xDist(minX, maxX);
+    uDistd yDist(minY, maxY);
+    uDistd zDist(minZ, maxZ);
+
+    xData = RandomData::Generate(xDist, gen, size);
+    yData = RandomData::Generate(yDist, gen, size);
+    zData = RandomData::Generate(zDist, gen, size);
+
+    for (int i = 0; i < size; i++)
+      pairs.append(Pair3D(xData[i], yData[i], zData[i]));
+
+    return pairs;
+  }
+};
+
 class MainWindow : public QMainWindow
 {
   Q_OBJECT
 
 public:
+  enum Mode {TwoD, ThreeD, ND};
+
   MainWindow(QWidget *parent = nullptr);
   ~MainWindow();
 
+  void SwitchTo2D();
+  void SwitchTo3D();
+
   void SetSignals();
   void GenerateData();
+  void Generate2D();
+  void Generate3D();
   void SetGridBounds(double xMin, double xMax, double yMin, double yMax);
   void Step();
   void GoBackwardOneStep();
@@ -109,7 +186,8 @@ public:
   void PointSizeChanged(int size);
   void PointShapeChanged(QString text);
   void CentroidShapeChanged(QString text);
-  void SetPairVector(QVector<double> x, QVector<double> y);
+  void Set2DPairVector(QVector<double> x, QVector<double> y);
+  void Set3DPairVector(QVector<double> x, QVector<double> y, QVector<double> z);
   void Set2DGraphData();
   void DrawData(QVector<Pair2D>& centroids, PairBuckets& assignedPairs);
   void SetColorVector(int k);
@@ -117,11 +195,17 @@ public:
   void StopPlaying();
   void EnableControls(bool state);
   void ImportData();
+  void Import2D();
+  void Import3D();
   void Parse2D(QTextStream& in);
+  void Parse3D(QTextStream& in);
+  void Zoom3D();
   void DefaultPlot();
   PairBuckets GetPairBuckets(QVector<quint32>& assignments);
   void ShowInfoDialog();
   bool CheckDegenerateCases();
+  void Show3DControls();
+  void Change3DEye(QString direction);
   double FindXMin();
   double FindXMax();
   double FindYMin();
@@ -130,8 +214,10 @@ public:
 
   QVector<double> xData_;
   QVector<double> yData_;
+  QVector<double> zData_;
   QVector<Pair2D> pairs_;
-  double minx_, miny_, maxx_, maxy_;
+  QVector<Pair3D> pairs3D_;
+  double minx_, miny_, maxx_, maxy_, minz_, maxz_;
 
   static QCPScatterStyle::ScatterShape GetStyleFromString(QString text);
 protected:
@@ -145,6 +231,8 @@ private:
   bool kmeansExecuting_ = false;
   bool playing_ = false;
 
+  Mode mode_;
+
   Ui::MainWindow *ui;
   Info* infoDialog_;
   RandomData* rndG_;
@@ -152,6 +240,7 @@ private:
   kmeans<Pair2D>* kmeans_alg_;
   QVector<QColor>* colors_;
   QTimer* timer_;
+  Controls3D* controls3DDialog_;
 
   QCPScatterStyle pointStyle_, centroidStyle_;
   QVector<Pair2D> centroidsBackward_;
@@ -159,3 +248,4 @@ private:
   ulong step_;
 };
 #endif // MAINWINDOW_H
+

@@ -3,6 +3,10 @@
 ViewWidget::ViewWidget(QWidget *parent, Qt::WindowFlags f) :
   QOpenGLWidget(parent, f)
 {
+  m_center = {0, 0, 5};
+  m_eye = {0, 0, 0};
+  m_previousSet = false;
+
   auto turntableTimer = new QTimer(this);
   turntableTimer->callOnTimeout(this, &ViewWidget::updateTurntable);
   turntableTimer->start(1000.0/30.0);
@@ -66,8 +70,8 @@ void ViewWidget::initializeGL()
     "void main(void)\n"
     "{\n"
     "   gl_Position = matrix * vertex;\n"
-    "   vColor = (vertex + vec4(1.0))/2.0;\n"
-//    "   vColor = color;\n"
+//    "   vColor = (vertex + vec4(1.0))/2.0;\n"
+    "   vColor = color;\n"
     "}");
 
   m_pointProgram.addShaderFromSourceCode(QOpenGLShader::Fragment,
@@ -106,28 +110,50 @@ float ViewWidget::angleForTime(qint64 msTime, float secondsPerRotation) const
   return (t - qFloor(t)) * 360.0;
 }
 
+void ViewWidget::setColors(QVector<float> colors)
+{
+  m_colors = colors;
+}
+
+void ViewWidget::setPoints(QVector<double> xPoints, QVector<double> yPoints, QVector<double> zPoints)
+{
+  for (int i = 0; i < xPoints.size(); i++)
+  {
+    m_points.append(xPoints[i]);
+    m_points.append(yPoints[i]);
+    m_points.append(zPoints[i]);
+  }
+}
+
+void ViewWidget::moveEye(float x, float y, float z)
+{
+  m_eye.setX(m_eye.x() - x);
+  m_eye.setY(m_eye.y() + y);
+  m_eye.setZ(m_eye.z() + z);
+}
+
 void ViewWidget::paintGL()
 {
   glEnable(GL_DEPTH_TEST);
-  QOpenGLShaderProgram program;
-  program.addShaderFromSourceCode(QOpenGLShader::Vertex,
-      "attribute highp vec4 vertex;\n"
-      "uniform highp mat4 matrix;\n"
-      "void main(void)\n"
-      "{\n"
-      "   gl_Position = matrix * vertex;\n"
-      "}");
-  program.addShaderFromSourceCode(QOpenGLShader::Fragment,
-      "uniform mediump vec4 color;\n"
-      "void main(void)\n"
-      "{\n"
-      "   gl_FragColor = color;\n"
-      "}");
-  program.link();
-  program.bind();
+//  QOpenGLShaderProgram program;
+//  program.addShaderFromSourceCode(QOpenGLShader::Vertex,
+//      "attribute highp vec4 vertex;\n"
+//      "uniform highp mat4 matrix;\n"
+//      "void main(void)\n"
+//      "{\n"
+//      "   gl_Position = matrix * vertex;\n"
+//      "}");
+//  program.addShaderFromSourceCode(QOpenGLShader::Fragment,
+//      "uniform mediump vec4 color;\n"
+//      "void main(void)\n"
+//      "{\n"
+//      "   gl_FragColor = color;\n"
+//      "}");
+//  program.link();
+//  program.bind();
 
-  int vertexLocation = program.attributeLocation("vertex");
-  int matrixLocation = program.uniformLocation("matrix");
+//  int vertexLocation = program.attributeLocation("vertex");
+//  int matrixLocation = program.uniformLocation("matrix");
 //  int colorLocation = program.uniformLocation("color");
 
 //  static GLfloat const triangleVertices[] = {
@@ -141,9 +167,9 @@ void ViewWidget::paintGL()
 //     pmvMatrix.ortho(-width()/2.0, width()/2.0, -height()/2.0, height()/2.0, -1, 1);
   pmvMatrix.perspective(40.0, float(width())/height(), 1.0f, 2000.0f);
 //     pmvMatrix.ortho(rect());
-  pmvMatrix.lookAt({0, 0, 5}, {0, 0, 0}, {0, 1, 0});
-  pmvMatrix.rotate(angleForTime(m_elapsedTimer.elapsed(), 15), {0.0f, 1.0f, 0.0f});
-  program.setUniformValue(matrixLocation, pmvMatrix);
+  pmvMatrix.lookAt(m_center, m_eye, {0, 1, 0});
+//  pmvMatrix.rotate(angleForTime(m_elapsedTimer.elapsed(), 15), {0.0f, 1.0f, 0.0f});
+//  program.setUniformValue(matrixLocation, pmvMatrix);
 
   m_pointProgram.bind();
   m_pointProgram.enableAttributeArray("vertex");
@@ -151,14 +177,14 @@ void ViewWidget::paintGL()
 
   m_pointProgram.setUniformValue("matrix", pmvMatrix);
   m_pointProgram.setAttributeArray("vertex", m_points.constData(), 3);
-//  m_pointProgram.setAttributeArray("color", m_colors.constData(), 3);
+  m_pointProgram.setAttributeArray("color", m_colors.constData(), 3);
 
   glDrawArrays(GL_POINTS, 0, m_points.count()/3);
   m_pointProgram.disableAttributeArray("vertex");
 //  m_pointProgram.disableAttributeArray("color");
 
-  program.enableAttributeArray(vertexLocation);
-  program.setUniformValue(matrixLocation, pmvMatrix);
+//  program.enableAttributeArray(vertexLocation);
+//  program.setUniformValue(matrixLocation, pmvMatrix);
 
 //  auto pentagon = createPolygon(60, 60, 0, 50, 5);
 //  program.setAttributeArray(vertexLocation, pentagon.constData(), 3);
@@ -216,6 +242,16 @@ void ViewWidget::paintGL()
     m_fps = float(m_frameCount) / m_fpsTimer.restart() * 1000.0f;
     m_frameCount = 0;
   }
+}
+
+void ViewWidget::wheelEvent(QWheelEvent *event)
+{
+  int angle = event->angleDelta().y();
+
+  if (angle > 0)
+    m_center.setZ(m_center.z() - 0.25f);
+  else
+    m_center.setZ(m_center.z() + 0.25f);
 }
 
 void ViewWidget::updateTurntable()
