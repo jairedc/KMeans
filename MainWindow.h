@@ -106,13 +106,13 @@ struct Pair3D
     return pair_[i];
   }
 
-  Pair3D operator+(const Pair2D& rhs)
+  Pair3D operator+(const Pair3D& rhs)
   {
     Pair3D sum(pair_[0] + rhs[0], pair_[1] + rhs[2], pair_[2] + rhs[2]);
     return sum;
   }
 
-  Pair3D& operator+=(const Pair2D& rhs)
+  Pair3D& operator+=(const Pair3D& rhs)
   {
     pair_[0] += rhs[0];
     pair_[1] += rhs[1];
@@ -132,7 +132,7 @@ struct Pair3D
                  qPow(lhs[2] - rhs[2], 2));
   }
 
-  static double L1Distance(Pair2D lhs, Pair2D rhs)
+  static double L1Distance(Pair3D lhs, Pair3D rhs)
   {
     return qAbs(lhs[0] - rhs[0]) + qAbs(lhs[1] - rhs[1]) +
            qAbs(lhs[2] - rhs[2]);
@@ -180,15 +180,20 @@ public:
   void Generate3D();
   void SetGridBounds(double xMin, double xMax, double yMin, double yMax);
   void Step();
+  void Step2D();
+  void Step3D();
   void GoBackwardOneStep();
   void CopyLastStep();
   void Reset();
+  void Reset2D();
+  void Reset3D();
   void PointSizeChanged(int size);
   void PointShapeChanged(QString text);
   void CentroidShapeChanged(QString text);
   void Set2DPairVector(QVector<double> x, QVector<double> y);
   void Set3DPairVector(QVector<double> x, QVector<double> y, QVector<double> z);
   void Set2DGraphData();
+  void Set3DGraphData();
   void DrawData(QVector<Pair2D>& centroids, PairBuckets& assignedPairs);
   void SetColorVector(int k);
   void PlaySteps();
@@ -200,16 +205,20 @@ public:
   void Parse2D(QTextStream& in);
   void Parse3D(QTextStream& in);
   void Zoom3D();
-  void DefaultPlot();
+  void DefaultPlot2D();
+  void DefaultPlot3D();
   PairBuckets GetPairBuckets(QVector<quint32>& assignments);
   void ShowInfoDialog();
   bool CheckDegenerateCases();
   void Show3DControls();
-  void Change3DEye(QString direction);
+  void Rotate3D();
+  void Change3DEye(QString direction, float amount);
   double FindXMin();
   double FindXMax();
   double FindYMin();
   double FindYMax();
+  double FindZMin();
+  double FindZMax();
 
 
   QVector<double> xData_;
@@ -238,12 +247,14 @@ private:
   RandomData* rndG_;
   QErrorMessage* eMsg_;
   kmeans<Pair2D>* kmeans_alg_;
+  kmeans<Pair3D>* kmeans_alg3D_;
   QVector<QColor>* colors_;
   QTimer* timer_;
   Controls3D* controls3DDialog_;
 
   QCPScatterStyle pointStyle_, centroidStyle_;
   QVector<Pair2D> centroidsBackward_;
+  QVector<Pair3D> centroids3DBackward_;
   QVector<quint32> assignmentsBackward_;
   ulong step_;
 };

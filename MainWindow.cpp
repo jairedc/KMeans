@@ -14,6 +14,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent),
   eMsg_->setWindowModality(Qt::WindowModal);
 
   kmeans_alg_ = nullptr;
+  kmeans_alg3D_ = nullptr;
   colors_ = nullptr;
   timer_ = new QTimer(this);
   timer_->callOnTimeout(this, &MainWindow::Step);
@@ -86,6 +87,8 @@ void MainWindow::SetSignals()
           this, &MainWindow::Show3DControls);
   connect(controls3DDialog_, &Controls3D::directionClicked,
           this, &MainWindow::Change3DEye);
+  connect(controls3DDialog_, &Controls3D::rotateClicked,
+          this, &MainWindow::Rotate3D);
 }
 
 void MainWindow::PlaySteps()
@@ -165,7 +168,7 @@ void MainWindow::Import2D()
 
     file.close();
     SetGridBounds(minx_, maxx_, miny_, maxy_);
-    DefaultPlot();
+    DefaultPlot2D();
     Set2DPairVector(xData_, yData_);
   }
 }
@@ -195,7 +198,7 @@ void MainWindow::Import3D()
 
     file.close();
     // TODO: set 3D bounds and other information
-    Set3DPairVector(xData_, yData_, zData_);
+    DefaultPlot3D();
     ui->viewWidget->setPoints(xData_, yData_, zData_);
   }
 }
@@ -275,7 +278,7 @@ void MainWindow::Zoom3D()
 
 }
 
-void MainWindow::DefaultPlot()
+void MainWindow::DefaultPlot2D()
 {
   ui->plot->clearGraphs();
   if (ui->plot->graphCount() == 0)
@@ -285,6 +288,11 @@ void MainWindow::DefaultPlot()
   g->setLineStyle(QCPGraph::lsNone);
   g->setScatterStyle(pointStyle_);
   ui->plot->replot();
+}
+
+void MainWindow::DefaultPlot3D()
+{
+  ui->viewWidget->setPoints(xData_, yData_, zData_);
 }
 
 void MainWindow::GenerateData()
@@ -310,7 +318,7 @@ void MainWindow::Generate2D()
   SetGridBounds(ui->xMinSpinBox->value(), ui->xMaxSpinBox->value(),
                 ui->yMinSpinBox->value(), ui->yMaxSpinBox->value());
 
-  DefaultPlot();
+  DefaultPlot2D();
 }
 
 void MainWindow::Generate3D()
@@ -328,7 +336,7 @@ void MainWindow::Generate3D()
   Set3DPairVector(xData_, yData_, zData_);
 
   // TODO: set 3D bounds
-  ui->viewWidget->setPoints(xData_, yData_, zData_);
+  DefaultPlot3D();
 }
 
 void MainWindow::SetGridBounds(double xMin, double xMax,
@@ -339,6 +347,14 @@ void MainWindow::SetGridBounds(double xMin, double xMax,
 }
 
 void MainWindow::Step()
+{
+  if (mode_ == Mode::TwoD)
+    Step2D();
+  else if (mode_ == Mode::ThreeD)
+    Step3D();
+}
+
+void MainWindow::Step2D()
 {
   if (pairs_.size() == 0)
   {
@@ -359,6 +375,17 @@ void MainWindow::Step()
         kmeansExecuting_ = true;
         kmeans_alg_->setK(k);
         SetColorVector(k);
+        if (mode_ == Mode::ThreeD)
+        {
+          QVector<float> colors;
+          for (int i = 0; i < colors_->size(); i++)
+          {
+            colors.append(colors_->at(i).redF());
+            colors.append(colors_->at(i).greenF());
+            colors.append(colors_->at(i).blueF());
+          }
+          ui->viewWidget->setPointColors(colors);
+        }
         EnableControls(false);
 
         if (ui->initComboBox->currentText() == "Random")
@@ -401,28 +428,146 @@ void MainWindow::Step()
   }
 }
 
+void MainWindow::Step3D()
+{
+  if (pairs3D_.size() == 0)
+  {
+    eMsg_->showMessage("Data not initialized. Can't perform kmeans.");
+  }
+  else
+  {
+    bool degenerate = false;
+    int k = ui->kSpinBox->value();
+    if (kmeans_alg3D_ == nullptr)
+      kmeans_alg3D_ = new kmeans<Pair3D>(k, pairs3D_);
+
+    if (!kmeansExecuting_)
+    {
+      degenerate = CheckDegenerateCases();
+      if (!degenerate)
+      {
+        kmeansExecuting_ = true;
+        kmeans_alg3D_->setK(k);
+        SetColorVector(k);
+
+        QVector<float> colors;
+        for (int i = 0; i < colors_->size(); i++)
+        {
+          colors.append(colors_->at(i).redF());
+          colors.append(colors_->at(i).greenF());
+          colors.append(colors_->at(i).blueF());
+        }
+        ui->viewWidget->setPointColors(colors);
+
+        EnableControls(false);
+
+        if (ui->initComboBox->currentText() == "Random")
+        {
+          QVector<Pair3D> randomCentroids = Pair3D::MakeRandomPairs(k,
+                                FindXMin(), FindXMax(), FindYMin(), FindYMax(),
+                                FindZMin(), FindZMax());
+          kmeans_alg3D_->setInitialization(InitializeType::Random);
+          kmeans_alg3D_->setRandomCentroids(randomCentroids);
+        }
+        if (ui->initComboBox->currentText() == "Kpp")
+          kmeans_alg3D_->setInitialization(InitializeType::Kpp);
+        if (ui->initComboBox->currentText() == "Sample")
+          kmeans_alg3D_->setInitialization(InitializeType::Sample);
+      }
+    }
+    if (!degenerate)
+    {
+      std::function<double(Pair3D, Pair3D)> distF;
+      if (ui->distanceFComboBox->currentText() == "L1")
+        distF = Pair3D::L1Distance;
+      else
+        distF = Pair3D::EuclideanDistance;
+
+      if (step_)
+      {
+        CopyLastStep();
+        if (!playing_)
+          ui->backOneButton->setEnabled(true);
+      }
+
+      int stepValue = ui->stepSpinBox->value();
+      if (stepValue == 1)
+        kmeans_alg3D_->step(distF);
+      else
+        kmeans_alg3D_->step(distF, stepValue);
+      step_++;
+      Set3DGraphData();
+      infoDialog_->ChangeInfo(step_, kmeans_alg3D_->getEnergy());
+    }
+  }
+}
+
 void MainWindow::GoBackwardOneStep()
 {
   ui->backOneButton->setEnabled(false);
-  PairBuckets assignedPairs = GetPairBuckets(assignmentsBackward_);
+  if (mode_ == Mode::TwoD)
+  {
+    PairBuckets assignedPairs = GetPairBuckets(assignmentsBackward_);
 
-  DrawData(centroidsBackward_, assignedPairs);
-  kmeans_alg_->centroids() = centroidsBackward_;
+    DrawData(centroidsBackward_, assignedPairs);
+    kmeans_alg_->centroids() = centroidsBackward_;
+  }
+  if (mode_ == Mode::ThreeD)
+  {
+    QVector<float> colors;
+    for (int i = 0; i < assignmentsBackward_.size(); i++)
+    {
+      colors.append(colors_->at(assignmentsBackward_[i]).red());
+      colors.append(colors_->at(assignmentsBackward_[i]).green());
+      colors.append(colors_->at(assignmentsBackward_[i]).blue());
+    }
+    ui->viewWidget->setPointColors(colors);
+  }
 }
 
 void MainWindow::CopyLastStep()
 {
   if (step_)
   {
-    centroidsBackward_ = kmeans_alg_->centroids();
-    assignmentsBackward_ = kmeans_alg_->assignments();
+    if (mode_ == Mode::TwoD)
+    {
+      centroidsBackward_ = kmeans_alg_->centroids();
+      assignmentsBackward_ = kmeans_alg_->assignments();
+    }
+    else if (mode_ == Mode::ThreeD)
+    {
+      centroids3DBackward_ = kmeans_alg3D_->centroids();
+      assignmentsBackward_ = kmeans_alg3D_->assignments();
+    }
   }
 }
 
 void MainWindow::Reset()
 {
+  if (mode_ == Mode::TwoD)
+    Reset2D();
+  else if (mode_ == Mode::ThreeD)
+    Reset3D();
+}
+
+void MainWindow::Reset2D()
+{
   timer_->stop();
-  DefaultPlot();
+  DefaultPlot2D();
+  kmeansExecuting_ = false;
+  playing_ = false;
+  EnableControls(true);
+  ui->stopButton->setEnabled(false);
+  ui->backOneButton->setEnabled(false);
+  infoDialog_->ChangeInfo(0, 0.0);
+  step_ = 0;
+}
+
+void MainWindow::Reset3D()
+{
+  timer_->stop();
+  ui->viewWidget->reset();
+  DefaultPlot3D();
   kmeansExecuting_ = false;
   playing_ = false;
   EnableControls(true);
@@ -434,15 +579,20 @@ void MainWindow::Reset()
 
 void MainWindow::PointSizeChanged(int size)
 {
-  pointStyle_.setSize(size);
-  centroidStyle_.setSize(size + 16);
-  if (!playing_)
+  if (mode_ == Mode::TwoD)
   {
-    if(kmeansExecuting_)
-      Set2DGraphData();
-    else
-      DefaultPlot();
+    pointStyle_.setSize(size);
+    centroidStyle_.setSize(size + 16);
+    if (!playing_)
+    {
+      if(kmeansExecuting_)
+        Set2DGraphData();
+      else
+        DefaultPlot2D();
+    }
   }
+  else if (mode_ == Mode::ThreeD)
+    ui->viewWidget->setPointSize(size);
 }
 
 void MainWindow::PointShapeChanged(QString text)
@@ -453,7 +603,7 @@ void MainWindow::PointShapeChanged(QString text)
     if(kmeansExecuting_)
       Set2DGraphData();
     else
-      DefaultPlot();
+      DefaultPlot2D();
   }
 }
 
@@ -465,7 +615,7 @@ void MainWindow::CentroidShapeChanged(QString text)
     if(kmeansExecuting_)
       Set2DGraphData();
     else
-      DefaultPlot();
+      DefaultPlot2D();
   }
 }
 
@@ -491,6 +641,34 @@ void MainWindow::Set2DGraphData()
   PairBuckets assignedPairs = GetPairBuckets(assignments);
 
   DrawData(centroids, assignedPairs);
+}
+
+void MainWindow::Set3DGraphData()
+{
+  QVector<Pair3D>& centroids = kmeans_alg3D_->centroids();
+  QVector<quint32>& assignments = kmeans_alg3D_->assignments();
+  QVector<float> centroidPoints, centroidColors, colors;
+
+  for (int i = 0; i < assignments.size(); i++)
+  {
+    colors.append(colors_->at(assignments[i]).red());
+    colors.append(colors_->at(assignments[i]).green());
+    colors.append(colors_->at(assignments[i]).blue());
+  }
+  ui->viewWidget->setPointColors(colors);
+
+  for (int i = 0; i < centroids.size(); i++)
+  {
+    centroidPoints.append(centroids.at(i)[0]);
+    centroidPoints.append(centroids.at(i)[1]);
+    centroidPoints.append(centroids.at(i)[2]);
+
+    centroidColors.append(colors_->at(i).red());
+    centroidColors.append(colors_->at(i).green());
+    centroidColors.append(colors_->at(i).blue());
+  }
+  ui->viewWidget->setCentroidPoints(centroidPoints);
+  ui->viewWidget->setCentroidColors(centroidColors);
 }
 
 void MainWindow::DrawData(QVector<Pair2D> &centroids, PairBuckets &assignedPairs)
@@ -554,7 +732,13 @@ void MainWindow::ShowInfoDialog()
 bool MainWindow::CheckDegenerateCases()
 {
   int k = ui->kSpinBox->value();
-  int n = pairs_.size();
+  int n;
+  if (mode_ == Mode::TwoD)
+    n = pairs_.size();
+  else if (mode_ == Mode::ThreeD)
+    n = pairs3D_.size();
+  else
+    n = 0;
 
   if (k == 0 || k == 1)
   {
@@ -576,53 +760,155 @@ void MainWindow::Show3DControls()
     controls3DDialog_->show();
 }
 
-void MainWindow::Change3DEye(QString direction)
+void MainWindow::Rotate3D()
+{
+  ui->viewWidget->switchRotate();
+}
+
+void MainWindow::Change3DEye(QString direction, float amount)
 {
   ViewWidget* vw = ui->viewWidget;
+  float step = float(amount) * 0.01f;
   if (direction == "up")
-    vw->moveEye(0.0f, -0.01f, 0.0f);
+    vw->moveEye(0.0f, -step, 0.0f);
   else if (direction == "down")
-    vw->moveEye(0.0f, 0.01f, 0.0f);
+    vw->moveEye(0.0f, step, 0.0f);
   else if (direction == "left")
-    vw->moveEye(-0.01f, 0.0f, 0.0f);
+    vw->moveEye(-step, 0.0f, 0.0f);
   else if (direction == "right")
-    vw->moveEye(0.01f, 0.0f, 0.0f);
+    vw->moveEye(step, 0.0f, 0.0f);
 }
 
 double MainWindow::FindXMin()
 {
-  double minX = pairs_[0][0];
-  for (int i = 1; i < pairs_.size(); i++)
-    if (pairs_[i][0] < minX)
-      minX = pairs_[i][0];
-  return minX;
+  if (mode_ == Mode::TwoD)
+  {
+    double minX = pairs_[0][0];
+    for (int i = 1; i < pairs_.size(); i++)
+      if (pairs_[i][0] < minX)
+        minX = pairs_[i][0];
+    return minX;
+  }
+  else if (mode_ == Mode::ThreeD)
+  {
+    double minX = pairs3D_[0][0];
+    for (int i = 1; i < pairs3D_.size(); i++)
+      if (pairs3D_[i][0] < minX)
+        minX = pairs3D_[i][0];
+    return minX;
+  }
+  else
+    return 0.0;
 }
 
 double MainWindow::FindXMax()
 {
-  double maxX = pairs_[0][0];
-  for (int i = 1; i < pairs_.size(); i++)
-    if (pairs_[i][0] > maxX)
-      maxX = pairs_[i][0];
-  return maxX;
+  if (mode_ == Mode::TwoD)
+  {
+    double maxX = pairs_[0][0];
+    for (int i = 1; i < pairs_.size(); i++)
+      if (pairs_[i][0] > maxX)
+        maxX = pairs_[i][0];
+    return maxX;
+  }
+  else if (mode_ == Mode::ThreeD)
+  {
+    double maxX = pairs3D_[0][0];
+    for (int i = 1; i < pairs3D_.size(); i++)
+      if (pairs3D_[i][0] > maxX)
+        maxX = pairs3D_[i][0];
+    return maxX;
+  }
+  else
+    return 0.0;
 }
 
 double MainWindow::FindYMin()
 {
-  double minY = pairs_[0][1];
-  for (int i = 1; i < pairs_.size(); i++)
-    if (pairs_[i][1] < minY)
-      minY = pairs_[i][1];
-  return minY;
+  if (mode_ == Mode::TwoD)
+  {
+    double minY = pairs_[0][1];
+    for (int i = 1; i < pairs_.size(); i++)
+      if (pairs_[i][1] < minY)
+        minY = pairs_[i][1];
+    return minY;
+  }
+  else if (mode_ == Mode::ThreeD)
+  {
+    double minY = pairs3D_[0][1];
+    for (int i = 1; i < pairs3D_.size(); i++)
+      if (pairs3D_[i][1] < minY)
+        minY = pairs3D_[i][1];
+    return minY;
+  }
+  else
+    return 0.0;
 }
 
 double MainWindow::FindYMax()
 {
-  double maxY = pairs_[0][1];
-  for (int i = 1; i < pairs_.size(); i++)
-    if (pairs_[i][1] > maxY)
-      maxY = pairs_[i][1];
-  return maxY;
+  if (mode_ == Mode::TwoD)
+  {
+    double maxY = pairs_[0][1];
+    for (int i = 1; i < pairs_.size(); i++)
+      if (pairs_[i][1] > maxY)
+        maxY = pairs_[i][1];
+    return maxY;
+  }
+  else if (mode_ == Mode::ThreeD)
+  {
+    double maxY = pairs3D_[0][1];
+    for (int i = 1; i < pairs3D_.size(); i++)
+      if (pairs3D_[i][1] > maxY)
+        maxY = pairs3D_[i][1];
+    return maxY;
+  }
+  else
+    return 0.0;
+}
+
+double MainWindow::FindZMin()
+{
+  if (mode_ == Mode::TwoD)
+  {
+    double minZ = pairs_[0][2];
+    for (int i = 1; i < pairs_.size(); i++)
+      if (pairs_[i][2] < minZ)
+        minZ = pairs_[i][2];
+    return minZ;
+  }
+  else if (mode_ == Mode::ThreeD)
+  {
+    double minZ = pairs3D_[0][2];
+    for (int i = 1; i < pairs3D_.size(); i++)
+      if (pairs3D_[i][2] < minZ)
+        minZ = pairs3D_[i][2];
+    return minZ;
+  }
+  else
+    return 0.0;
+}
+
+double MainWindow::FindZMax()
+{
+  if (mode_ == Mode::TwoD)
+  {
+    double maxZ = pairs_[0][2];
+    for (int i = 1; i < pairs_.size(); i++)
+      if (pairs_[i][2] > maxZ)
+        maxZ = pairs_[i][2];
+    return maxZ;
+  }
+  else if (mode_ == Mode::ThreeD)
+  {
+    double maxZ = pairs3D_[0][2];
+    for (int i = 1; i < pairs3D_.size(); i++)
+      if (pairs3D_[i][2] > maxZ)
+        maxZ = pairs3D_[i][2];
+    return maxZ;
+  }
+  else
+    return 0.0;
 }
 
 QCPScatterStyle::ScatterShape MainWindow::GetStyleFromString(QString text)

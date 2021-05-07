@@ -372,7 +372,7 @@
        </size>
       </property>
       <property name="title">
-       <string>Generate Data</string>
+       <string>Generate Uniformly Random Data</string>
       </property>
       <layout class="QGridLayout" name="gridLayout_2">
        <item row="0" column="0">

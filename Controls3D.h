@@ -3,6 +3,9 @@
 
 #include <QDialog>
 #include <QString>
+#include <QKeyEvent>
+#include <QMouseEvent>
+#include <QDebug>
 
 namespace Ui {
 class Controls3D;
@@ -20,7 +23,12 @@ public slots:
   void buttonClicked();
 
 signals:
-  void directionClicked(QString button);
+  void directionClicked(QString button, float amount);
+  void rotateClicked();
+
+protected:
+  void keyPressEvent(QKeyEvent* event) override;
+  void mousePressEvent(QMouseEvent* event) override;
 
 private:
   Ui::Controls3D *ui;
