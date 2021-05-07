@@ -112,11 +112,13 @@ float ViewWidget::angleForTime(qint64 msTime, float secondsPerRotation) const
 
 void ViewWidget::setColors(QVector<float> colors)
 {
+  m_colors.clear();
   m_colors = colors;
 }
 
 void ViewWidget::setPoints(QVector<double> xPoints, QVector<double> yPoints, QVector<double> zPoints)
 {
+  m_points.clear();
   for (int i = 0; i < xPoints.size(); i++)
   {
     m_points.append(xPoints[i]);
