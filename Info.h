@@ -14,7 +14,7 @@ class Info : public QDialog
 public:
   explicit Info(QWidget *parent = nullptr);
   ~Info();
-  void ChangeInfo(qint32 step, double energy);
+  void ChangeInfo(qint32 step, double energy, QString reason = "");
 
 private:
   Ui::Info *ui;

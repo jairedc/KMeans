@@ -5,6 +5,7 @@
 #include <QRandomGenerator>
 #include <functional>
 #include <random>
+#include <QString>
 
 enum InitializeType {Random, Sample, Kpp};
 
@@ -21,10 +22,12 @@ public:
   double getEnergy() { return energy_; };
   void setRandomCentroids(QVector<T> centroids);
 
-  void step(std::function<double(T, T)> d);
-  void step(std::function<double(T, T)> d, int steps);
-  void finish(std::function<double(T, T)> d);
+  bool step(std::function<double(T, T)> d);
+  bool step(std::function<double(T, T)> d, int steps);
+  bool finish(std::function<double(T, T)> d);
   void reset();
+
+  QString stopReason;
 
   int k() const;
   QVector<T>& centroids();

@@ -14,6 +14,7 @@ kmeans<T>::kmeans(int k, quint32 maxIterations)
   initType_ = InitializeType::Sample;
   energy_ = 0.0;
   randomCentroidsInitialized_ = false;
+  stopReason = "";
 
   rand_ = QRandomGenerator::global();
 }
@@ -29,6 +30,7 @@ kmeans<T>::kmeans(int k, QVector<T> data, quint32 maxIterations)
   initType_ = InitializeType::Sample;
   energy_ = 0.0;
   randomCentroidsInitialized_ = false;
+  stopReason = "";
 
   centroids_.resize(k_);
   assignments_.resize(data_.size());
@@ -52,6 +54,7 @@ template <class T>
 void kmeans<T>::setData(QVector<T> data)
 {
   data_ = data;
+  assignments_.resize(data_.size());
 }
 
 template<class T>
@@ -63,17 +66,27 @@ void kmeans<T>::setK(int k)
 }
 
 template <class T>
-void kmeans<T>::step(std::function<double(T, T)> d)
+bool kmeans<T>::step(std::function<double(T, T)> d)
 {
+  if (!stopReason.isEmpty())
+    return false;
+
+  bool sameAssignments = true;
   // Random assignment of centroids to data
   if (!initialized_)
   {
     initialized_ = true;
     if (!initialize(d))
-      return;
+    {
+      stopReason = "Not initialized.";
+      return false;
+    }
   }
   if (currIteration_ >= maxIterations_)
-    return;
+  {
+    stopReason = "Maximum number of iterations reached.";
+    return false;
+  }
   energy_ = 0.0;
 
   // Assign cluster centers
@@ -96,6 +109,8 @@ void kmeans<T>::step(std::function<double(T, T)> d)
       }
     }
     energy_ += minD;
+    if (assignments_[p] != assignedC)
+      sameAssignments = false;
     assignments_[p] = assignedC;
 
     newCentroids[assignedC] += data_[p];
@@ -106,29 +121,44 @@ void kmeans<T>::step(std::function<double(T, T)> d)
   for (qint32 i = 0; i < k_; i++)
     if (cCount[i] != 0)
       centroids_[i] = newCentroids[i] / cCount[i];
+  currIteration_++;
+  if (sameAssignments)
+  {
+    stopReason = "Assignments didn't change.";
+    return false;
+  }
+  return true;
 }
 
 template <class T>
-void kmeans<T>::step(std::function<double(T, T)> d, int steps)
+bool kmeans<T>::step(std::function<double(T, T)> d, int steps)
 {
-  for (int i = 0; i < steps; i++) step(d);
+  bool running = true;
+  for (int i = 0; i < steps && running; i++)
+    running = step(d);
+  return running;
 }
 
 template <class T>
-void kmeans<T>::finish(std::function<double(T, T)> d)
+bool kmeans<T>::finish(std::function<double(T, T)> d)
 {
   qint32 finishCount = maxIterations_ - currIteration_;
-  for (qint32 i = 0; i < finishCount; i++)
-    step(d);
+  bool running = true;
+  for (qint32 i = 0; i < finishCount && running; i++)
+    running = step(d);
+  return running;
 }
 
 template<class T>
 void kmeans<T>::reset()
 {
   centroids_.resize(k_);
+  assignments_.resize(data_.size());
   initialized_ = false;
   randomCentroidsInitialized_ = false;
   energy_ = 0.0;
+  stopReason = "";
+  currIteration_ = 0;
 }
 
 template<class T>

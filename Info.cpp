@@ -13,8 +13,9 @@ Info::~Info()
   delete ui;
 }
 
-void Info::ChangeInfo(qint32 step, double energy)
+void Info::ChangeInfo(qint32 step, double energy, QString reason)
 {
   ui->stepDisplay->setText(QString::number(step));
   ui->energyDisplay->setText(QString::number(energy));
+  ui->reasonDisplay->setText(reason);
 }

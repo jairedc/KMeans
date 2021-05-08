@@ -298,9 +298,9 @@ void ViewWidget::wheelEvent(QWheelEvent *event)
   int angle = event->angleDelta().y();
 
   if (angle > 0)
-    m_center.setZ(m_center.z() - 0.25f);
+    m_center.setZ(m_center.z() - 1.00f);
   else
-    m_center.setZ(m_center.z() + 0.25f);
+    m_center.setZ(m_center.z() + 1.00f);
 }
 
 //void ViewWidget::updateTurntable()

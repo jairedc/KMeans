@@ -26,10 +26,10 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent),
   pointStyle_.setShape(QCPScatterStyle::ssDisc);
   pointStyle_.setSize(4);
   centroidStyle_.setShape(QCPScatterStyle::ssCrossCircle);
-  centroidStyle_.setSize(20);
+  centroidStyle_.setSize(pointStyle_.size() + 25);
 
   SetSignals();
-  SwitchTo3D();
+  SwitchTo2D();
 }
 
 void MainWindow::showEvent(QShowEvent *event)
@@ -131,6 +131,14 @@ void MainWindow::EnableControls(bool state)
   ui->kSpinBox->setEnabled(state);
   ui->distanceFComboBox->setEnabled(state);
   ui->initComboBox->setEnabled(state);
+
+  if (mode_ == Mode::ThreeD)
+  {
+    ui->zMinSpinBox->setEnabled(state);
+    ui->zMaxSpinBox->setEnabled(state);
+    ui->pointShapeComboBox->setEnabled(state);
+    ui->centroidShapeComboBox->setEnabled(state);
+  }
 }
 
 void MainWindow::ImportData()
@@ -139,8 +147,6 @@ void MainWindow::ImportData()
     Import2D();
   else if (mode_ == Mode::ThreeD)
     Import3D();
-
-
 }
 
 void MainWindow::Import2D()
@@ -170,13 +176,32 @@ void MainWindow::Import2D()
     SetGridBounds(minx_, maxx_, miny_, maxy_);
     DefaultPlot2D();
     Set2DPairVector(xData_, yData_);
+
+    if (kmeans_alg_ == nullptr)
+      kmeans_alg_ = new kmeans<Pair2D>(ui->kSpinBox->value(), pairs_);
+    else
+    {
+      kmeans_alg_->reset();
+      kmeans_alg_->setData(pairs_);
+    }
   }
 }
 
 void MainWindow::Import3D()
 {
-  QString filename = QFileDialog::getOpenFileName(this, "Open Data File",
-                                                  "/home", tr("*.txt"));
+  setFocus();
+  QString filename = "";
+//  QFileDialog dialog(ui->centralwidget, "Open Data File", QDir::home().absolutePath(), tr("*.txt"));
+  ui->viewWidget->hide();
+  QFileDialog* dialog = new QFileDialog(ui->viewWidget, "Open Data File", QDir::home().absolutePath(), tr("*.txt"));
+  dialog->setWindowModality(Qt::ApplicationModal);
+  dialog->setModal(true);
+  dialog->setWindowFlags(Qt::WindowStaysOnTopHint);
+  if (dialog->exec() == QDialog::Accepted)
+    filename = dialog->selectedFiles().value(0);//  QString filename = QFileDialog::getOpenFileName(this, "Open Data File",
+//                                                  "/home", tr("*.txt"));
+  ui->viewWidget->show();
+  ui->viewWidget->setFocus();
   qDebug() << "Filename: " << filename;
   if (filename.isEmpty())
     eMsg_->showMessage("Empty filename, data not set.");
@@ -197,9 +222,16 @@ void MainWindow::Import3D()
     if (dimText.toInt() == 3) Parse3D(in);
 
     file.close();
-    // TODO: set 3D bounds and other information
     DefaultPlot3D();
     ui->viewWidget->setPoints(xData_, yData_, zData_);
+    Set3DPairVector(xData_, yData_, zData_);
+    if (kmeans_alg3D_ == nullptr)
+      kmeans_alg3D_ = new kmeans<Pair3D>(ui->kSpinBox->value(), pairs3D_);
+    else
+    {
+      kmeans_alg3D_->reset();
+      kmeans_alg3D_->setData(pairs3D_);
+    }
   }
 }
 
@@ -207,6 +239,9 @@ void MainWindow::Parse2D(QTextStream& in)
 {
   QString line = in.readLine();
   QStringList data = line.split(' ');
+
+  xData_.clear();
+  yData_.clear();
 
   maxx_ = data[0].toDouble();
   minx_ = data[0].toDouble();
@@ -238,6 +273,10 @@ void MainWindow::Parse3D(QTextStream &in)
 {
   QString line = in.readLine();
   QStringList data = line.split(' ');
+
+  xData_.clear();
+  yData_.clear();
+  zData_.clear();
 
   maxx_ = data[0].toDouble();
   minx_ = data[0].toDouble();
@@ -271,11 +310,6 @@ void MainWindow::Parse3D(QTextStream &in)
     if (y < miny_) miny_ = y;
     if (z < minz_) minz_ = z;
   }
-}
-
-void MainWindow::Zoom3D()
-{
-
 }
 
 void MainWindow::DefaultPlot2D()
@@ -373,7 +407,9 @@ void MainWindow::Step2D()
       if (!degenerate)
       {
         kmeansExecuting_ = true;
+        kmeans_alg_->reset();
         kmeans_alg_->setK(k);
+        kmeans_alg_->setData(pairs_);
         SetColorVector(k);
         if (mode_ == Mode::ThreeD)
         {
@@ -416,14 +452,24 @@ void MainWindow::Step2D()
           ui->backOneButton->setEnabled(true);
       }
 
+      bool stepSuccessful;
       int stepValue = ui->stepSpinBox->value();
       if (stepValue == 1)
-        kmeans_alg_->step(distF);
+        stepSuccessful = kmeans_alg_->step(distF);
       else
-        kmeans_alg_->step(distF, stepValue);
-      step_++;
-      Set2DGraphData();
-      infoDialog_->ChangeInfo(step_, kmeans_alg_->getEnergy());
+        stepSuccessful = kmeans_alg_->step(distF, stepValue);
+      if (!stepSuccessful)
+      {
+        infoDialog_->ChangeInfo(step_, kmeans_alg_->getEnergy(),
+                                kmeans_alg_->stopReason);
+        StopPlaying();
+      }
+      else
+      {
+        step_++;
+        Set2DGraphData();
+        infoDialog_->ChangeInfo(step_, kmeans_alg_->getEnergy());
+      }
     }
   }
 }
@@ -447,6 +493,8 @@ void MainWindow::Step3D()
       if (!degenerate)
       {
         kmeansExecuting_ = true;
+        kmeans_alg3D_->reset();
+        kmeans_alg3D_->setData(pairs3D_);
         kmeans_alg3D_->setK(k);
         SetColorVector(k);
 
@@ -490,14 +538,24 @@ void MainWindow::Step3D()
           ui->backOneButton->setEnabled(true);
       }
 
+      bool stepSuccessful;
       int stepValue = ui->stepSpinBox->value();
       if (stepValue == 1)
-        kmeans_alg3D_->step(distF);
+        stepSuccessful = kmeans_alg3D_->step(distF);
       else
-        kmeans_alg3D_->step(distF, stepValue);
-      step_++;
-      Set3DGraphData();
-      infoDialog_->ChangeInfo(step_, kmeans_alg3D_->getEnergy());
+        stepSuccessful = kmeans_alg3D_->step(distF, stepValue);
+      if (!stepSuccessful)
+      {
+        infoDialog_->ChangeInfo(step_, kmeans_alg3D_->getEnergy(),
+                                kmeans_alg3D_->stopReason);
+        StopPlaying();
+      }
+      else
+      {
+        step_++;
+        Set3DGraphData();
+        infoDialog_->ChangeInfo(step_, kmeans_alg3D_->getEnergy());
+      }
     }
   }
 }
@@ -575,6 +633,7 @@ void MainWindow::Reset3D()
   ui->backOneButton->setEnabled(false);
   infoDialog_->ChangeInfo(0, 0.0);
   step_ = 0;
+  ui->viewWidget->setPointSize(ui->pointSizeSpinBox->value());
 }
 
 void MainWindow::PointSizeChanged(int size)
@@ -582,7 +641,7 @@ void MainWindow::PointSizeChanged(int size)
   if (mode_ == Mode::TwoD)
   {
     pointStyle_.setSize(size);
-    centroidStyle_.setSize(size + 16);
+    centroidStyle_.setSize(size + 25);
     if (!playing_)
     {
       if(kmeansExecuting_)
@@ -963,6 +1022,10 @@ MainWindow::~MainWindow()
 
 void MainWindow::SwitchTo2D()
 {
+  xData_.clear();
+  yData_.clear();
+  zData_.clear();
+  Reset();
   mode_ = Mode::TwoD;
   ui->viewWidget->hide();
   ui->plot->show();
@@ -972,17 +1035,40 @@ void MainWindow::SwitchTo2D()
   ui->zBoundsLabel->setEnabled(false);
   ui->zMinSpinBox->setEnabled(false);
   ui->zMaxSpinBox->setEnabled(false);
+  ui->xMinSpinBox->setEnabled(true);
+  ui->xMaxSpinBox->setEnabled(true);
+  ui->yMinSpinBox->setEnabled(true);
+  ui->yMaxSpinBox->setEnabled(true);
+  ui->nDataSpinBox->setEnabled(true);
+  ui->createDataButton->setEnabled(true);
+  ui->kSpinBox->setEnabled(true);
+  ui->initComboBox->setEnabled(true);
+  ui->distanceFComboBox->setEnabled(true);
+  ui->centroidShapeComboBox->setEnabled(true);
+  ui->pointShapeComboBox->setEnabled(true);
 }
 
 void MainWindow::SwitchTo3D()
 {
+  xData_.clear();
+  yData_.clear();
+  zData_.clear();
+  Reset();
   mode_ = Mode::ThreeD;
   ui->plot->hide();
   ui->viewWidget->show();
+  ui->viewWidget->setFocus();
   ui->switch2DAction->setEnabled(true);
   ui->switch3DAction->setEnabled(false);
 
   ui->zBoundsLabel->setEnabled(true);
   ui->zMinSpinBox->setEnabled(true);
   ui->zMaxSpinBox->setEnabled(true);
+  ui->xMinSpinBox->setEnabled(true);
+  ui->xMaxSpinBox->setEnabled(true);
+  ui->yMinSpinBox->setEnabled(true);
+  ui->yMaxSpinBox->setEnabled(true);
+  ui->kSpinBox->setEnabled(true);
+  ui->pointShapeComboBox->setEnabled(false);
+  ui->centroidShapeComboBox->setEnabled(false);
 }
