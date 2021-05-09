@@ -756,8 +756,23 @@
   <tabstop>xMaxSpinBox</tabstop>
   <tabstop>yMinSpinBox</tabstop>
   <tabstop>yMaxSpinBox</tabstop>
+  <tabstop>zMaxSpinBox</tabstop>
+  <tabstop>zMinSpinBox</tabstop>
   <tabstop>nDataSpinBox</tabstop>
   <tabstop>createDataButton</tabstop>
+  <tabstop>kSpinBox</tabstop>
+  <tabstop>initComboBox</tabstop>
+  <tabstop>stepSpinBox</tabstop>
+  <tabstop>distanceFComboBox</tabstop>
+  <tabstop>playSpeedSpinBox</tabstop>
+  <tabstop>centroidShapeComboBox</tabstop>
+  <tabstop>resetButton</tabstop>
+  <tabstop>stepButton</tabstop>
+  <tabstop>backOneButton</tabstop>
+  <tabstop>stopButton</tabstop>
+  <tabstop>playButton</tabstop>
+  <tabstop>pointSizeSpinBox</tabstop>
+  <tabstop>pointShapeComboBox</tabstop>
  </tabstops>
  <resources/>
  <connections/>
