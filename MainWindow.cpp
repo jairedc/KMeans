@@ -658,6 +658,22 @@ void MainWindow::Reset3D()
   infoDialog_->ChangeInfo(0, 0.0);
   step_ = 0;
   ui->viewWidget->setPointSize(ui->pointSizeSpinBox->value());
+  ui->plot->hide();
+  ui->viewWidget->show();
+  ui->viewWidget->setFocus();
+  ui->switch2DAction->setEnabled(true);
+  ui->switch3DAction->setEnabled(false);
+
+  ui->zBoundsLabel->setEnabled(true);
+  ui->zMinSpinBox->setEnabled(true);
+  ui->zMaxSpinBox->setEnabled(true);
+  ui->xMinSpinBox->setEnabled(true);
+  ui->xMaxSpinBox->setEnabled(true);
+  ui->yMinSpinBox->setEnabled(true);
+  ui->yMaxSpinBox->setEnabled(true);
+  ui->kSpinBox->setEnabled(true);
+  ui->pointShapeComboBox->setEnabled(false);
+  ui->centroidShapeComboBox->setEnabled(false);
 }
 
 void MainWindow::PointSizeChanged(int size)
