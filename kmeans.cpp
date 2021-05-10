@@ -132,10 +132,10 @@ bool kmeans<T>::step(std::function<double(T, T)> d)
   currIteration_++;
   if (sameAssignments && !ignoreSame_)
   {
-    ignoreSame_ = false;
     stopReason = "Assignments didn't change.";
     return false;
   }
+  ignoreSame_ = false;
   return true;
 }
 
