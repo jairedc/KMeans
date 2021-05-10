@@ -721,6 +721,8 @@ void MainWindow::CentroidShapeChanged(QString text)
 void MainWindow::Set2DPairVector(QVector<double> x, QVector<double> y)
 {
   ui->stepButton->setEnabled(true);
+  ui->resetButton->setEnabled(true);
+  ui->playButton->setEnabled(true);
   pairs_.clear();
   for (int i = 0; i < x.size(); i++)
     pairs_.append(Pair2D(x[i], y[i]));
@@ -730,6 +732,8 @@ void MainWindow::Set3DPairVector(QVector<double> x, QVector<double> y,
                                  QVector<double> z)
 {
   ui->stepButton->setEnabled(true);
+  ui->resetButton->setEnabled(true);
+  ui->playButton->setEnabled(true);
   pairs3D_.clear();
   for (int i = 0; i < x.size(); i++)
     pairs3D_.append(Pair3D(x[i], y[i], z[i]));
@@ -1070,6 +1074,8 @@ void MainWindow::SwitchTo2D()
   yData_.clear();
   zData_.clear();
   ui->stepButton->setEnabled(false);
+  ui->resetButton->setEnabled(false);
+  ui->playButton->setEnabled(false);
   Reset();
   mode_ = Mode::TwoD;
   ui->viewWidget->hide();
@@ -1099,6 +1105,8 @@ void MainWindow::SwitchTo3D()
   yData_.clear();
   zData_.clear();
   ui->stepButton->setEnabled(false);
+  ui->resetButton->setEnabled(false);
+  ui->playButton->setEnabled(false);
   Reset();
   mode_ = Mode::ThreeD;
   ui->plot->hide();
