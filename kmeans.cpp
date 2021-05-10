@@ -84,7 +84,7 @@ bool kmeans<T>::step(std::function<double(T, T)> d)
   }
   if (currIteration_ >= maxIterations_)
   {
-    stopReason = "Maximum number of iterations reached.";
+    stopReason = "Maximum number of iterations.";
     return false;
   }
   energy_ = 0.0;

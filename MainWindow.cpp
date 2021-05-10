@@ -575,9 +575,9 @@ void MainWindow::GoBackwardOneStep()
     QVector<float> colors;
     for (int i = 0; i < assignmentsBackward_.size(); i++)
     {
-      colors.append(colors_->at(assignmentsBackward_[i]).red());
-      colors.append(colors_->at(assignmentsBackward_[i]).green());
-      colors.append(colors_->at(assignmentsBackward_[i]).blue());
+      colors.append(colors_->at(assignmentsBackward_[i]).redF());
+      colors.append(colors_->at(assignmentsBackward_[i]).greenF());
+      colors.append(colors_->at(assignmentsBackward_[i]).blueF());
     }
     ui->viewWidget->setPointColors(colors);
   }
@@ -710,9 +710,9 @@ void MainWindow::Set3DGraphData()
 
   for (int i = 0; i < assignments.size(); i++)
   {
-    colors.append(colors_->at(assignments[i]).red());
-    colors.append(colors_->at(assignments[i]).green());
-    colors.append(colors_->at(assignments[i]).blue());
+    colors.append(colors_->at(assignments[i]).redF());
+    colors.append(colors_->at(assignments[i]).greenF());
+    colors.append(colors_->at(assignments[i]).blueF());
   }
   ui->viewWidget->setPointColors(colors);
 
@@ -722,9 +722,9 @@ void MainWindow::Set3DGraphData()
     centroidPoints.append(centroids.at(i)[1]);
     centroidPoints.append(centroids.at(i)[2]);
 
-    centroidColors.append(colors_->at(i).red());
-    centroidColors.append(colors_->at(i).green());
-    centroidColors.append(colors_->at(i).blue());
+    centroidColors.append(colors_->at(i).redF());
+    centroidColors.append(colors_->at(i).greenF());
+    centroidColors.append(colors_->at(i).blueF());
   }
   ui->viewWidget->setCentroidPoints(centroidPoints);
   ui->viewWidget->setCentroidColors(centroidColors);
@@ -763,11 +763,13 @@ void MainWindow::DrawData(QVector<Pair2D> &centroids, PairBuckets &assignedPairs
 
 void MainWindow::SetColorVector(int k)
 {
-  colors_ = new QVector<QColor>();
+  if (colors_ == nullptr)
+    colors_ = new QVector<QColor>();
+  else
+    colors_->clear();
 
   for (int i = 0; i < k; i++)
-    colors_->append(QColor::fromHsvF(fmod(0.618033988749895 * i, 1.0),
-                                     1.0, 1.0));
+    colors_->append(QColor::fromHsvF(1.0 / double(k) * double(i), 1.0, 1.0));
 }
 
 PairBuckets MainWindow::GetPairBuckets(QVector<quint32> &assignments)
