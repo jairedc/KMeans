@@ -51,7 +51,7 @@ private:
   QVector<float> m_points, m_centroids;
   QVector<float> m_pointColors, m_centroidColors;
   QOpenGLShaderProgram m_pointProgram;
-  QOpenGLShaderProgram m_centroidProgram;
+  QOpenGLShaderProgram m_axesProgram;
   QElapsedTimer m_elapsedTimer;
   qint64 m_lastTime;
   QVector3D m_center;
