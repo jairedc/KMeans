@@ -256,6 +256,7 @@ private:
   QVector<Pair2D> centroidsBackward_;
   QVector<Pair3D> centroids3DBackward_;
   QVector<quint32> assignmentsBackward_;
+  double energyBackward_;
   ulong step_;
 };
 #endif // MAINWINDOW_H

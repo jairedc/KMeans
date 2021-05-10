@@ -21,6 +21,7 @@ public:
   void setInitialization(InitializeType type);
   double getEnergy() { return energy_; };
   void setRandomCentroids(QVector<T> centroids);
+  void setIgnoreSameAssignments(bool flag);
 
   bool step(std::function<double(T, T)> d);
   bool step(std::function<double(T, T)> d, int steps);
@@ -38,7 +39,7 @@ public:
 private:
   InitializeType initType_;
   double energy_;
-  bool initialized_, randomCentroidsInitialized_;
+  bool initialized_, randomCentroidsInitialized_, ignoreSame_;
   int maxIterations_;
   int currIteration_;
   int k_;

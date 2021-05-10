@@ -15,6 +15,7 @@ kmeans<T>::kmeans(int k, quint32 maxIterations)
   energy_ = 0.0;
   randomCentroidsInitialized_ = false;
   stopReason = "";
+  ignoreSame_ = false;
 
   rand_ = QRandomGenerator::global();
 }
@@ -31,6 +32,7 @@ kmeans<T>::kmeans(int k, QVector<T> data, quint32 maxIterations)
   energy_ = 0.0;
   randomCentroidsInitialized_ = false;
   stopReason = "";
+  ignoreSame_ = false;
 
   centroids_.resize(k_);
   assignments_.resize(data_.size());
@@ -48,6 +50,12 @@ void kmeans<T>::setRandomCentroids(QVector<T> centroids)
 {
   centroids_ = centroids;
   randomCentroidsInitialized_ = true;
+}
+
+template<class T>
+void kmeans<T>::setIgnoreSameAssignments(bool flag)
+{
+  ignoreSame_ = flag;
 }
 
 template <class T>
@@ -122,8 +130,9 @@ bool kmeans<T>::step(std::function<double(T, T)> d)
     if (cCount[i] != 0)
       centroids_[i] = newCentroids[i] / cCount[i];
   currIteration_++;
-  if (sameAssignments)
+  if (sameAssignments && !ignoreSame_)
   {
+    ignoreSame_ = false;
     stopReason = "Assignments didn't change.";
     return false;
   }

@@ -562,6 +562,7 @@ void MainWindow::Step3D()
 
 void MainWindow::GoBackwardOneStep()
 {
+  step_--;
   ui->backOneButton->setEnabled(false);
   if (mode_ == Mode::TwoD)
   {
@@ -569,18 +570,39 @@ void MainWindow::GoBackwardOneStep()
 
     DrawData(centroidsBackward_, assignedPairs);
     kmeans_alg_->centroids() = centroidsBackward_;
+    kmeans_alg_->setIgnoreSameAssignments(true);
   }
   if (mode_ == Mode::ThreeD)
   {
-    QVector<float> colors;
+    QVector<float> centroidPoints, centroidColors, colors;
     for (int i = 0; i < assignmentsBackward_.size(); i++)
+    {
+      colors.append(colors_->at(assignmentsBackward_[i]).redF());
+      colors.append(colors_->at(assignmentsBackward_[i]).greenF());
+      colors.append(colors_->at(assignmentsBackward_[i]).blueF());
+    }  for (int i = 0; i < assignmentsBackward_.size(); i++)
     {
       colors.append(colors_->at(assignmentsBackward_[i]).redF());
       colors.append(colors_->at(assignmentsBackward_[i]).greenF());
       colors.append(colors_->at(assignmentsBackward_[i]).blueF());
     }
     ui->viewWidget->setPointColors(colors);
+
+    for (int i = 0; i < centroids3DBackward_.size(); i++)
+    {
+      centroidPoints.append(centroids3DBackward_.at(i)[0]);
+      centroidPoints.append(centroids3DBackward_.at(i)[1]);
+      centroidPoints.append(centroids3DBackward_.at(i)[2]);
+
+      centroidColors.append(colors_->at(i).redF());
+      centroidColors.append(colors_->at(i).greenF());
+      centroidColors.append(colors_->at(i).blueF());
+    }
+    ui->viewWidget->setCentroidPoints(centroidPoints);
+    ui->viewWidget->setCentroidColors(centroidColors);
+    kmeans_alg3D_->setIgnoreSameAssignments(true);
   }
+  infoDialog_->ChangeInfo(step_, energyBackward_);
 }
 
 void MainWindow::CopyLastStep()
@@ -591,11 +613,13 @@ void MainWindow::CopyLastStep()
     {
       centroidsBackward_ = kmeans_alg_->centroids();
       assignmentsBackward_ = kmeans_alg_->assignments();
+      energyBackward_ = kmeans_alg_->getEnergy();
     }
     else if (mode_ == Mode::ThreeD)
     {
       centroids3DBackward_ = kmeans_alg3D_->centroids();
       assignmentsBackward_ = kmeans_alg3D_->assignments();
+      energyBackward_ = kmeans_alg3D_->getEnergy();
     }
   }
 }
