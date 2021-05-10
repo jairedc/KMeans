@@ -43,4 +43,5 @@ void Controls3D::keyPressEvent(QKeyEvent *event)
 void Controls3D::mousePressEvent(QMouseEvent *event)
 {
   setFocus();
+  qDebug() << event->button() << " pressed.";
 }

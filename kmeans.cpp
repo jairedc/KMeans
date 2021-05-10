@@ -101,7 +101,7 @@ bool kmeans<T>::step(std::function<double(T, T)> d)
   T newCentroids[k_] = {};
   quint32 cCount[k_] = {};
 
-  qint32 assignedC;
+  quint32 assignedC;
   double currentD, minD;
   for (qint32 p = 0; p < data_.size(); p++)
   {
