@@ -3,7 +3,7 @@
 ViewWidget::ViewWidget(QWidget *parent, Qt::WindowFlags f) :
   QOpenGLWidget(parent, f)
 {
-  m_center = {0, 0, 5};
+  m_center = {0, 0, 25};
   m_eye = {0, 0, 0};
   m_previousSet = false;
   m_pointSize = 4.0f;
