@@ -369,8 +369,8 @@ void MainWindow::Generate3D()
 
   Set3DPairVector(xData_, yData_, zData_);
 
-  // TODO: set 3D bounds
   DefaultPlot3D();
+  Reset3D();
 }
 
 void MainWindow::SetGridBounds(double xMin, double xMax,
