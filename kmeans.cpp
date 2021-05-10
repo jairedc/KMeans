@@ -190,9 +190,7 @@ QVector<quint32> &kmeans<T>::assignments()
 
 template <class T>
 kmeans<T>::~kmeans()
-{
-  delete rand_;
-}
+{}
 
 template<class T>
 bool kmeans<T>::initialize(std::function<double(T, T)> d)
